@@ -1,31 +1,10 @@
-# Dynmap - dynamic web maps for Minecraft servers
+## Do you need support?
+Details about support for the project can be found here on the Wiki. You may also wish to use the [Subreddit](https://reddit.com/r/Dynmap/) or the [Discord](https://discord.gg/52pqBpw) to get support. Templates for asking support can be found in each location.
 
-## How to build
-Dynmap 3.x+ uses Gradle for building support for all platforms, with all resulting artifacts produced in the /targets directory
+## Have you found a bug?
+Before reporting a bug or issue, please make sure you can replicate the issue and that the issue is directly related to the main dynmap branch (not one of the forks like dynmap-essentials, dynmap-blockscanner, etc) If so, please submit bug reports **ONLY TO THIS GITHUB** with the title `[BUG REPORT] Bug Report Title` 
 
-To build, run:
-    ./gradlew clean build install
-Or (on Windows):
-    gradlew.bat clean build install
-    
-# What platforms are supported?
-The following target platforms are supported:
-- CraftBukkit/Spigot - via the Dynmap-<version>-spigot.jar plugin (supports MC v1.11.2 through v1.16.1)
-- Forge v1.11.2 - via Dynmap-<version>-forge-1.11.2.jar mod
-- Forge v1.12.2 - via Dynmap-<version>-forge-1.12.2.jar mod
-- Forge v1.13.2 - via Dynmap-<version>-forge-1.13.2.jar mod
-- Forge v1.14.4 - via Dynmap-<version>-forge-1.14.4.jar mod
-- Forge v1.15.2 - via Dynmap-<version>-forge-1.15.2.jar mod
-- Forge v1.16.1 - via Dynmap-<version>-forge-1.16.1.jar mod
-    
-# Data Storage
-Dynmap supports the following storage backends:
-- Flat files: The default for a new installation
-- SQLite
-- MySQL
-- PostgreSQL: EXPERIMENTAL
-
-# Contributing to Dynmap's Code
+## Contributing to Dynmap's Code?
 The Dynmap team welcomes Pull Requests with fixes, new features, and new platform support.  That said, the following rules apply:
 - Ultimately, we reserve the right to accept or deny a PR for any reason: fact is, by accepting it, we're also accepting any of the problems with supporting it,
 explaining it to users, and fixing current and future problems - if we don't think the PR is of value consistent with that cost, we'll probably not accept it.
@@ -58,7 +37,7 @@ and language skills above and beyond the Java language requirements the code bas
 interfaces in Dynmap particular to dozens of mods on multiple versions of multiple platforms is unmanageable, so we don't do it.  The ONLY exception currently
 are security mods - although, even for those, leverage of platform-standard security interfaces is always preferred (e.g. Sponge or Bukket standard permissions)
 
-# Porting, Supporting Other Platforms, Customized Dynmap Builds
+## Porting, Supporting Other Platforms, Customized Dynmap Builds
 While Dynmap is open source, subject to the Apache Public License, v2, the Dynmap team does have specific policies and requirements for anyone that would
 use the code here for anything except building contributions submitted back to this code base as Pull Requests (which is the only process by which code is accepted and can become part of a release supported by the Dynmap team).  Other authorized uses include:
 
@@ -73,7 +52,7 @@ cease distribution of the unofficial version, unless otherwise authorized to con
     - Any modified version CANNOT be monitized or otherwise charged for, under any circumstances, nor can redistribution of it be limited or restricted.
     - The modified code must continue to be Apache Public License v2, with no additional conditions or restrictions, including full public availability of the
     modified source code.
-    - Any code from Dynmap used in such versions should be built from an appropriate fork, as DynmapCore and other components (other than DynmapCoreAPI and 
+    - Any code from Dynmap used in such versions should be built from an appropriate fork, as DynampCore and other components (other than DynmapCoreAPI and 
     dynmap-api) are subject to breaking changes at any time, and the support messages in DynmapCore MUST be modified to refer to the supporting team (or, at
     least, removed).  The modified version should NOT refer to the Dynmap Discord nor to /r/Dynmap on Reddit for support. in any case.
     - Any bugs or issues opened in conjunction with the use of the modified version on this repository will be closed without comment.
@@ -93,11 +72,5 @@ Plugins or mods using the published APIs - DynmapCoreAPI (for all platforms) or 
 'compile' dependencies: DO NOT INTEGRATE THEM INTO YOUR PLUGIN - this will break Dynmap and/or other plugins when these interfaces are updated or 
 expanded.  These libraries are published at https://repo.mikeprimm.com and will be updated each official release.
 
-# Where to go for questions and discussions
-We have a Discord located at https://discord.gg/52pqBpw
-We also have a subreddit located at https://www.reddit.com/r/Dynmap/
-
-# Where to go to make donations
+## Want to support the dynmap team?
 I've set up a coffee-fund jar (I believe in the theory that software developers are machines that turn caffeine into code), for anyone who wants to throw in some tips!  I've got a Patreon here - https://www.patreon.com/dynmap, and for folks just looking to for a one-time coffee buy, hit my Ko-Fi at https://ko-fi.com/michaelprimm !
-
-

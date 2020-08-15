@@ -1,4 +1,4 @@
-package org.dynmap.bukkit.helper.v116;
+package org.dynmap.bukkit.helper.v116_2;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -22,27 +22,28 @@ import org.dynmap.bukkit.helper.BukkitMaterial;
 import org.dynmap.bukkit.helper.BukkitVersionHelperCB;
 import org.dynmap.bukkit.helper.BukkitVersionHelperGeneric;
 import org.dynmap.bukkit.helper.BukkitWorld;
-import org.dynmap.bukkit.helper.v116.MapChunkCache116;
+import org.dynmap.bukkit.helper.v116_2.MapChunkCache116_2;
 import org.dynmap.renderer.DynmapBlockState;
 import org.dynmap.utils.MapChunkCache;
 import org.dynmap.utils.Polygon;
 
-import net.minecraft.server.v1_16_R1.BiomeBase;
-import net.minecraft.server.v1_16_R1.BiomeFog;
-import net.minecraft.server.v1_16_R1.Block;
-import net.minecraft.server.v1_16_R1.BlockFluids;
-import net.minecraft.server.v1_16_R1.BlockRotatable;
-import net.minecraft.server.v1_16_R1.IBlockData;
-import net.minecraft.server.v1_16_R1.IRegistry;
-import net.minecraft.server.v1_16_R1.Material;
+import net.minecraft.server.v1_16_R2.BiomeBase;
+import net.minecraft.server.v1_16_R2.BiomeFog;
+import net.minecraft.server.v1_16_R2.Block;
+import net.minecraft.server.v1_16_R2.BlockFluids;
+import net.minecraft.server.v1_16_R2.BlockRotatable;
+import net.minecraft.server.v1_16_R2.IBlockData;
+import net.minecraft.server.v1_16_R2.IRegistry;
+import net.minecraft.server.v1_16_R2.Material;
+import net.minecraft.server.v1_16_R2.MinecraftServer;
 
 /**
  * Helper for isolation of bukkit version specific issues
  */
-public class BukkitVersionHelperSpigot116 extends BukkitVersionHelperGeneric {
+public class BukkitVersionHelperSpigot116_2 extends BukkitVersionHelperGeneric {
     private Field watercolorfield;
     
-    public BukkitVersionHelperSpigot116() {
+    public BukkitVersionHelperSpigot116_2() {
 		Class biomefog =  getNMSClass("net.minecraft.server.BiomeFog");
 		watercolorfield = getPrivateField(biomefog, new String[] { "c" }, int.class);
     }
@@ -61,6 +62,15 @@ public class BukkitVersionHelperSpigot116 extends BukkitVersionHelperGeneric {
     	}
         return names;
     }
+
+    private IRegistry<BiomeBase> reg = null;
+
+    private IRegistry<BiomeBase> getBiomeReg() {
+    	if (reg == null) {
+    		reg = MinecraftServer.getServer().aX().b(IRegistry.ay);
+    	}
+    	return reg;
+    }
     
     private Object[] biomelist;
     /**
@@ -71,7 +81,7 @@ public class BukkitVersionHelperSpigot116 extends BukkitVersionHelperGeneric {
     	if (biomelist == null) {
     		biomelist = new Object[1024];
             for (int i = 0; i < 1024; i++) {
-            	biomelist[i] = IRegistry.BIOME.fromId(i);
+            	biomelist[i] = getBiomeReg().fromId(i);
             }
         }
         return biomelist;
@@ -80,7 +90,7 @@ public class BukkitVersionHelperSpigot116 extends BukkitVersionHelperGeneric {
     /** Get ID from biomebase */
     @Override
     public int getBiomeBaseID(Object bb) {
-        return IRegistry.BIOME.a((BiomeBase)bb);
+    	return getBiomeReg().a((BiomeBase)bb);
     }
     
     public static IdentityHashMap<IBlockData, DynmapBlockState> dataToState;
@@ -141,7 +151,7 @@ public class BukkitVersionHelperSpigot116 extends BukkitVersionHelperGeneric {
      */
     @Override
     public MapChunkCache getChunkCache(BukkitWorld dw, List<DynmapChunk> chunks) {
-        MapChunkCache116 c = new MapChunkCache116();
+        MapChunkCache116_2 c = new MapChunkCache116_2();
         c.setChunks(dw, chunks);
         return c;
     }
@@ -152,7 +162,7 @@ public class BukkitVersionHelperSpigot116 extends BukkitVersionHelperGeneric {
     @Override
 	public int getBiomeBaseWaterMult(Object bb) {
     	try {
-			return (int) watercolorfield.get(((BiomeBase)bb).q());
+			return (int) watercolorfield.get(((BiomeBase)bb).l());
 		} catch (IllegalArgumentException e) {
 		} catch (IllegalAccessException e) {
 		}
@@ -162,7 +172,7 @@ public class BukkitVersionHelperSpigot116 extends BukkitVersionHelperGeneric {
     /** Get temperature from biomebase */
     @Override
     public float getBiomeBaseTemperature(Object bb) {
-    	return ((BiomeBase)bb).getTemperature();
+    	return ((BiomeBase)bb).k();
     }
 
     /** Get humidity from biomebase */
@@ -234,9 +244,9 @@ public class BukkitVersionHelperSpigot116 extends BukkitVersionHelperGeneric {
     	if (biomenames == null) {
     		biomenames = new String[1024];
             for (int i = 0; i < 1024; i++) {
-            	BiomeBase bb = IRegistry.BIOME.fromId(i);
+            	BiomeBase bb = getBiomeReg().fromId(i);
             	if (bb != null) {
-            		biomenames[i] = bb.n();
+            		biomenames[i] = bb.toString();
             	}
             }
         }
@@ -251,7 +261,7 @@ public class BukkitVersionHelperSpigot116 extends BukkitVersionHelperGeneric {
 	@Override
     /** Get ID string from biomebase */
     public String getBiomeBaseIDString(Object bb) {
-        String s = ((BiomeBase)bb).n();
+        String s = ((BiomeBase)bb).toString();
         if (s != null) {
         	String[] ss = s.split("\\.");
         	return ss[ss.length-1];
