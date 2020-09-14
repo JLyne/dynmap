@@ -11,8 +11,8 @@ repositories {
 }
 
 dependencies {
-    compile group: 'net.pl3x.purpur', name: 'purpur-api', version:'1.16.1-R0.1-SNAPSHOT'
-    compile group: 'net.pl3x.purpur', name: 'purpur', version:'1.16.1-R0.1-SNAPSHOT'
+    compile group: 'net.pl3x.purpur', name: 'purpur-api', version:'1.16.3-R0.1-SNAPSHOT'
+    compile group: 'net.pl3x.purpur', name: 'purpur', version:'1.16.3-R0.1-SNAPSHOT'
     compile 'com.nijikokun.bukkit:Permissions:3.1.6'
     compile 'me.lucko.luckperms:luckperms-api:4.3'
     compile 'net.luckperms:api:5.0'
@@ -41,6 +41,9 @@ dependencies {
         transitive = false
     }
     implementation(project(':bukkit-helper-116-2')) { 
+        transitive = false
+    }
+    implementation(project(':bukkit-helper-116-3')) { 
         transitive = false
     }
 }
@@ -72,6 +75,7 @@ shadowJar {
         //include(dependency(':bukkit-helper-115'))
         include(dependency(':bukkit-helper-116'))
         include(dependency(':bukkit-helper-116-2'))
+        include(dependency(':bukkit-helper-116-3'))
 	}
 	relocate('org.bstats', 'org.dynmap.bstats')
     destinationDir = file '../target'
