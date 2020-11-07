@@ -11,8 +11,10 @@ repositories {
 }
 
 dependencies {
-    compile group: 'net.pl3x.purpur', name: 'purpur-api', version:'1.16.3-R0.1-SNAPSHOT'
-    compile group: 'net.pl3x.purpur', name: 'purpur', version:'1.16.3-R0.1-SNAPSHOT'
+    //compile group: 'net.pl3x.purpur', name: 'purpur-api', version:'1.16.4-R0.1-SNAPSHOT'
+    //compile group: 'net.pl3x.purpur', name: 'purpur', version:'1.16.4-R0.1-SNAPSHOT'
+    compile name: 'purpur-api'
+    compile name: 'rtgaming-1.16.4'
     compile 'com.nijikokun.bukkit:Permissions:3.1.6'
     compile 'me.lucko.luckperms:luckperms-api:4.3'
     compile 'net.luckperms:api:5.0'
@@ -62,6 +64,12 @@ processResources {
 
 jar {
    classifier = 'unshaded'
+}
+
+repositories {
+     flatDir {
+       dirs 'libs'
+    }
 }
 
 shadowJar {
