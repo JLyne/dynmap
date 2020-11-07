@@ -11,6 +11,7 @@ import org.dynmap.bukkit.helper.BukkitVersionHelperGlowstone;
 import org.dynmap.bukkit.helper.v116.BukkitVersionHelperSpigot116;
 import org.dynmap.bukkit.helper.v116_2.BukkitVersionHelperSpigot116_2;
 import org.dynmap.bukkit.helper.v116_3.BukkitVersionHelperSpigot116_3;
+import org.dynmap.bukkit.helper.v116_4.BukkitVersionHelperSpigot116_4;
 
 public class Helper {
     
@@ -36,14 +37,21 @@ public class Helper {
                 Log.info("Loading Glowstone support");
                 BukkitVersionHelper.helper = new BukkitVersionHelperGlowstone();
             }
-            else if (v.contains("(MC: 1.16)") || v.contains("(MC: 1.16.1")) {
+            else if (v.contains("(MC: 1.16.1")) {
                 BukkitVersionHelper.helper = new BukkitVersionHelperSpigot116();
             }
             else if (v.contains("(MC: 1.16.2)")) {
                 BukkitVersionHelper.helper = new BukkitVersionHelperSpigot116_2();
             }
-            else if (v.contains("(MC: 1.16.")) {
+            else if (v.contains("(MC: 1.16.3)")) {
                 BukkitVersionHelper.helper = new BukkitVersionHelperSpigot116_3();
+            }
+            else if (v.contains("(MC: 1.16.")) {
+                BukkitVersionHelper.helper = new BukkitVersionHelperSpigot116_4();
+            }
+            // Loading last to prevent the 1.16 contains to match all newer versions and load older helper incorrectly.
+            else if (v.contains("(MC: 1.16")) {
+                BukkitVersionHelper.helper = new BukkitVersionHelperSpigot116();
             }
             //else if (v.contains("(MC: 1.15)") || v.contains("(MC: 1.15.")) {
             //    BukkitVersionHelper.helper = new BukkitVersionHelperSpigot115();
