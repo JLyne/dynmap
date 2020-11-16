@@ -6,12 +6,14 @@ include ':spigot'
 include ':bukkit-helper-116'
 include ':bukkit-helper-116-2'
 include ':bukkit-helper-116-3'
+include ':bukkit-helper-116-4'
 include ':bukkit-helper'
 include ':dynmap-api'
 include ':DynmapCore'
 include ':DynmapCoreAPI'
 //include ':fabric-1.16.2'
 //include ':fabric-1.16.1'
+//include ':fabric-1.15.2'
 //include ':forge-1.16.3'
 //include ':forge-1.16.2'
 //include ':forge-1.16.1'
@@ -28,12 +30,14 @@ project(':spigot').projectDir = "$rootDir/spigot" as File
 project(':bukkit-helper-116').projectDir = "$rootDir/bukkit-helper-116" as File
 project(':bukkit-helper-116-2').projectDir = "$rootDir/bukkit-helper-116-2" as File
 project(':bukkit-helper-116-3').projectDir = "$rootDir/bukkit-helper-116-3" as File
+project(':bukkit-helper-116-4').projectDir = "$rootDir/bukkit-helper-116-4" as File
 project(':bukkit-helper').projectDir = "$rootDir/bukkit-helper" as File
 project(':dynmap-api').projectDir = "$rootDir/dynmap-api" as File
 project(':DynmapCore').projectDir = "$rootDir/DynmapCore" as File
 project(':DynmapCoreAPI').projectDir = "$rootDir/DynmapCoreAPI" as File
 //project(':fabric-1.16.2').projectDir = "$rootDir/fabric-1.16.2" as File
 //project(':fabric-1.16.1').projectDir = "$rootDir/fabric-1.16.1" as File
+//project(':fabric-1.15.2').projectDir = "$rootDir/fabric-1.15.2" as File
 //project(':forge-1.16.3').projectDir = "$rootDir/forge-1.16.3" as File
 //project(':forge-1.16.2').projectDir = "$rootDir/forge-1.16.2" as File
 //project(':forge-1.16.1').projectDir = "$rootDir/forge-1.16.1" as File
