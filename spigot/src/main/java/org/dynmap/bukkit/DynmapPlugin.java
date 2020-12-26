@@ -187,8 +187,7 @@ public class DynmapPlugin extends JavaPlugin implements DynmapAPI {
     
     private static class BlockToCheck {
         Location loc;
-        Material typeid;
-        byte data;
+        Material type;
         String trigger;
     };
     private LinkedList<BlockToCheck> blocks_to_check = null;
@@ -1188,7 +1187,7 @@ public class DynmapPlugin extends JavaPlugin implements DynmapAPI {
                 /* Avoid stationary and moving water churn */
                 //if(bt == 9) bt = 8;
                 //if(btt.typeid == 9) btt.typeid = 8;
-                if((bt != btt.typeid) || (btt.data != w.getBlockAt(loc).getData())) {
+                if(bt != btt.type) {
                     String wn = getWorld(w).getName();
                     SnapshotCache.sscache.invalidateSnapshot(wn, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
                     mapManager.touch(wn, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), btt.trigger);
@@ -1211,8 +1210,7 @@ public class DynmapPlugin extends JavaPlugin implements DynmapAPI {
     private void checkBlock(Block b, String trigger) {
         BlockToCheck btt = new BlockToCheck();
         btt.loc = b.getLocation();
-        btt.typeid = b.getType();
-        btt.data = b.getData();
+        btt.type = b.getType();
         btt.trigger = trigger;
         blocks_to_check_accum.add(btt); /* Add to accumulator */
         btth.startIfNeeded();
