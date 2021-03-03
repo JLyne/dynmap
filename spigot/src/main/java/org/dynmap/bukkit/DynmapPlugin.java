@@ -16,6 +16,7 @@ import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
+import com.destroystokyo.paper.MaterialSetTag;
 import org.bstats.bukkit.Metrics;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -140,6 +141,8 @@ public class DynmapPlugin extends JavaPlugin implements DynmapAPI {
     private BukkitWorld last_bworld;
     
     private BukkitVersionHelper helper;
+
+    public static MaterialSetTag PRESSURE_PLATES = new MaterialSetTag().contains("PRESSURE");
     
     private final BukkitWorld getWorldByName(String name) {
         if((last_world != null) && (last_world.getName().equals(name))) {
@@ -184,8 +187,7 @@ public class DynmapPlugin extends JavaPlugin implements DynmapAPI {
     
     private static class BlockToCheck {
         Location loc;
-        int typeid;
-        byte data;
+        Material type;
         String trigger;
     };
     private LinkedList<BlockToCheck> blocks_to_check = null;
@@ -213,7 +215,7 @@ public class DynmapPlugin extends JavaPlugin implements DynmapAPI {
         public int getBlockIDAt(String wname, int x, int y, int z) {
             World w = getServer().getWorld(wname);
             if((w != null) && w.isChunkLoaded(x >> 4, z >> 4)) {
-                return w.getBlockTypeIdAt(x,  y,  z);
+                return w.getBlockAt(x,  y,  z).getType().getId();
             }
             return -1;
         }
@@ -1181,11 +1183,11 @@ public class DynmapPlugin extends JavaPlugin implements DynmapAPI {
                 World w = loc.getWorld();
                 if(!w.isChunkLoaded(loc.getBlockX()>>4, loc.getBlockZ()>>4))
                     continue;
-                int bt = w.getBlockTypeIdAt(loc);
+                Material bt = w.getBlockAt(loc).getType();
                 /* Avoid stationary and moving water churn */
-                if(bt == 9) bt = 8;
-                if(btt.typeid == 9) btt.typeid = 8;
-                if((bt != btt.typeid) || (btt.data != w.getBlockAt(loc).getData())) {
+                //if(bt == 9) bt = 8;
+                //if(btt.typeid == 9) btt.typeid = 8;
+                if(bt != btt.type) {
                     String wn = getWorld(w).getName();
                     SnapshotCache.sscache.invalidateSnapshot(wn, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
                     mapManager.touch(wn, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), btt.trigger);
@@ -1208,8 +1210,7 @@ public class DynmapPlugin extends JavaPlugin implements DynmapAPI {
     private void checkBlock(Block b, String trigger) {
         BlockToCheck btt = new BlockToCheck();
         btt.loc = b.getLocation();
-        btt.typeid = b.getTypeId();
-        btt.data = b.getData();
+        btt.type = b.getType();
         btt.trigger = trigger;
         blocks_to_check_accum.add(btt); /* Add to accumulator */
         btth.startIfNeeded();
@@ -1314,9 +1315,9 @@ public class DynmapPlugin extends JavaPlugin implements DynmapAPI {
                     Material m = b.getType();
                     if(m == null) return;
                     switch(m) {
-                        case STATIONARY_WATER:
+                        //case STATIONARY_WATER:
                         case WATER:
-                        case STATIONARY_LAVA:
+                        //case STATIONARY_LAVA:
                         case LAVA:
                         case GRAVEL:
                         case SAND:
@@ -1336,11 +1337,11 @@ public class DynmapPlugin extends JavaPlugin implements DynmapAPI {
                 public void onBlockFromTo(BlockFromToEvent event) {
                     Block b = event.getBlock();
                     Material m = b.getType();
-                    if((m != Material.WOOD_PLATE) && (m != Material.STONE_PLATE) && (m != null)) 
+                    if(!PRESSURE_PLATES.isTagged(m))
                         checkBlock(b, "blockfromto");
                     b = event.getToBlock();
                     m = b.getType();
-                    if((m != Material.WOOD_PLATE) && (m != Material.STONE_PLATE) && (m != null)) 
+                    if(!PRESSURE_PLATES.isTagged(m))
                         checkBlock(b, "blockfromto");
                 }
             };

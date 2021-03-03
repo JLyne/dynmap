@@ -3,6 +3,7 @@ main: org.dynmap.bukkit.DynmapPlugin
 version: "${version}-${buildnumber}"
 authors: [mikeprimm]
 website: "https://www.reddit.com/r/Dynmap/"
+api-version: "1.16"
 softdepend: [ Permissions, PermissionEx, bPermissions, PermissionsBukkit, GroupManager, LuckPerms, Vault, SkinsRestorer ]
 commands:
   dynmap:

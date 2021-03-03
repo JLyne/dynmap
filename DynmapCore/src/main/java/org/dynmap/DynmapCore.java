@@ -60,6 +60,7 @@ import org.dynmap.utils.BlockStep;
 import org.dynmap.utils.ImageIOManager;
 import org.dynmap.web.BanIPFilter;
 import org.dynmap.web.CustomHeaderFilter;
+import org.dynmap.web.FileNameFilter;
 import org.dynmap.web.FilterHandler;
 import org.dynmap.web.HandlerRouter;
 import org.eclipse.jetty.server.Connector;
@@ -123,6 +124,7 @@ public class DynmapCore implements DynmapCommonAPI {
     private int perTickLimit = 50;   // 50 ms
     private boolean dumpMissing = false;
     private static boolean migrate_chunks = false;
+    public boolean isInternalWebServerDisabled = false;
         
     private int     config_hashcode;    /* Used to signal need to reload web configuration (world changes, config update, etc) */
     private int fullrenderplayerlimit;  /* Number of online players that will cause fullrender processing to pause */
@@ -158,6 +160,9 @@ public class DynmapCore implements DynmapCommonAPI {
     private MapStorage defaultStorage;
     
     private String[] deftriggers = { };
+
+    private Boolean webserverCompConfigWarn = false;
+    private final String CompConfigWiki = "https://github.com/webbukkit/dynmap/wiki/Component-Configuration";
 
     /* Constructor for core */
     public DynmapCore() {
@@ -390,6 +395,9 @@ public class DynmapCore implements DynmapCommonAPI {
         configuration = new ConfigurationNode(f);
         configuration.load();
 
+        // Check if we are disabling the internal web server (implies external)
+        isInternalWebServerDisabled = configuration.getBoolean("disable-webserver", false);
+
         /* Prime the tiles directory */
         tilesDirectory = getFile(configuration.getString("tilespath", "web/tiles"));
         if (!tilesDirectory.isDirectory() && !tilesDirectory.mkdirs()) {
@@ -438,7 +446,12 @@ public class DynmapCore implements DynmapCommonAPI {
     }
 
     private String findExecutableOnPath(String fname) {
-		for (String dirname : System.getenv("PATH").split(File.pathSeparator)) {
+        String path = System.getenv("PATH");
+        // Fast-fail if path is null.
+        if (path == null)
+            return null;
+
+		for (String dirname : path.split(File.pathSeparator)) {
 			File file = new File(dirname, fname);
 			if (file.isFile() && file.canExecute()) {
 				return file.getAbsolutePath();
@@ -586,7 +599,10 @@ public class DynmapCore implements DynmapCommonAPI {
         
         loginRequired = configuration.getBoolean("login-required", false);
             
-        loadWebserver();
+        // If not disabled, load and initialize the internal web server
+        if (!isInternalWebServerDisabled) {
+        	loadWebserver();
+        }
 
         enabledTriggers.clear();
         List<String> triggers = configuration.getStrings("render-triggers", new ArrayList<String>());
@@ -608,8 +624,29 @@ public class DynmapCore implements DynmapCommonAPI {
         }
         Log.verboseinfo("Loaded " + componentManager.components.size() + " components.");
 
-        if (!configuration.getBoolean("disable-webserver", false)) {
+        if (!isInternalWebServerDisabled) {	// If internal not disabled, we should be using it and not external
             startWebserver();
+            if (!componentManager.isLoaded(InternalClientUpdateComponent.class)) {
+                Log.warning("Using internal server, but " + InternalClientUpdateComponent.class.toString() + " is DISABLED!");
+                webserverCompConfigWarn = true;
+            }
+            if (componentManager.isLoaded(JsonFileClientUpdateComponent.class)) {
+                Log.warning("Using internal server, but " + JsonFileClientUpdateComponent.class.toString() + " is ENABLED!");
+            }
+        }
+        else {
+            if (componentManager.isLoaded(InternalClientUpdateComponent.class)) {
+                Log.warning("Using external server, but " + InternalClientUpdateComponent.class.toString() + " is ENABLED!");
+            }
+            if (!componentManager.isLoaded(JsonFileClientUpdateComponent.class)) {
+                Log.warning("Using external server, but " + JsonFileClientUpdateComponent.class.toString() + " is DISABLED!");
+                webserverCompConfigWarn = true;
+            }
+        }
+        if (webserverCompConfigWarn) {
+            Log.warning("If the website is missing files or not loading/updating, this might be why.");
+            Log.warning("For more info, read this: " + CompConfigWiki);
+            webserverCompConfigWarn = false;
         }
         
         /* Add login/logoff listeners */
@@ -937,6 +974,8 @@ public class DynmapCore implements DynmapCommonAPI {
         if (checkbannedips) {
             filters.add(new BanIPFilter(this));
         }
+        filters.add(new FileNameFilter(this));
+        
 //        filters.add(new LoginFilter(this));
         
         /* Load customized response headers, if any */
