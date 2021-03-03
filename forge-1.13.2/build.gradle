@@ -1,6 +1,7 @@
 buildscript {
     repositories {
         maven { url = 'https://files.minecraftforge.net/maven' }
+         maven { url "https://repo.mikeprimm.com" }
         jcenter()
         mavenCentral()        
         maven {url = "https://oss.sonatype.org/content/repositories/snapshots/"}
@@ -23,16 +24,9 @@ sourceCompatibility = 1.8
 targetCompatibility = 1.8
 ext.buildNumber = System.getenv().BUILD_NUMBER ?: "Dev"
 
-repositories {
-    maven {
-        name = 'forge'
-        url = 'http://files.minecraftforge.net/maven'
-    }
-}
-
 minecraft {
-   mappings channel: 'stable', version: '47-1.13.2'
-   runs {
+    mappings channel: 'stable', version: '47-1.13.2'
+    runs {
         server {
             workingDirectory project.file('run').canonicalPath
         }
@@ -50,12 +44,15 @@ processResources
         include 'META-INF/mods.toml'
                 
         // replace version and mcversion
-        expand version: project.version + '-' + project.ext.buildNumber
+        expand(
+        	version: project.version + '-' + project.ext.buildNumber,
+        	mcversion: "1.13.2"
+    	)
     }
         
     // copy everything else, thats not the mcmod.info
     from(sourceSets.main.resources.srcDirs) {
-        include 'META-INF/mods.toml'
+        exclude 'META-INF/mods.toml'
     }
 }
 
@@ -65,9 +62,6 @@ shadowJar {
     }
     archiveName = "Dynmap-${parent.version}-forge-1.13.2.jar"
     destinationDir = file '../target'
-    manifest {
-        attributes 'FMLAT': 'dynmap_at.cfg'
-    }
 }
 
 shadowJar.doLast {
