@@ -625,7 +625,7 @@ public class FileTreeMapStorage extends MapStorage {
     @Override
     // For external web server only
     public String getTilesURI() {
-        return "tiles/";
+        return "standalone/tiles.php?tile=";
     }
 
     private boolean replaceFile(File f, byte[] b, int len) {
