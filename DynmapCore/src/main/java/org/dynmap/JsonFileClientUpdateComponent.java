@@ -205,6 +205,7 @@ public class JsonFileClientUpdateComponent extends ClientUpdateComponent {
         /* Get register URL */
         sb.append("  register: '");
         sb.append("removed");
+        sb.append("',\n");
         /* Get tiles URL */
         sb.append("  tiles: '");
         sb.append(core.configuration.getString("url/tiles", store.getTilesURI()));
