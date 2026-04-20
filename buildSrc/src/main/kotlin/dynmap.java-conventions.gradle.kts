@@ -19,6 +19,9 @@ repositories {
     maven {
         url = uri("https://repo.mikeprimm.com/")
     }
+    maven {
+        url = uri("https://jitpack.io")
+    }
 
     mavenCentral()
     mavenLocal()
