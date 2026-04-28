@@ -18,7 +18,7 @@ public class FenceWallBlockRenderer extends CustomRenderer {
     private static final int TEXTURE_TOP = 1;
     private static final int TEXTURE_BOTTOM = 2;
     private boolean check_yplus;
-    private BitSet link_ids = new BitSet();
+    private final BitSet link_ids = new BitSet();
 
     private static final int SIDE_XP = 0x1;
     private static final int SIDE_XN = 0x2;
@@ -29,7 +29,7 @@ public class FenceWallBlockRenderer extends CustomRenderer {
     private static final int SIDE_YP = 0x10;
 
     // Meshes, indexed by connection combination (bit 0=X+, bit 1=X-, bit 2=Z+, bit 3=Z-, bit 4=Y+)
-    private RenderPatch[][] meshes = new RenderPatch[32][];
+    private final RenderPatch[][] meshes = new RenderPatch[32][];
     
     private void addIDs(String bn) {
         DynmapBlockState bbs = DynmapBlockState.getBaseStateByName(bn);
@@ -74,7 +74,7 @@ public class FenceWallBlockRenderer extends CustomRenderer {
     }
     
     private void buildFenceMeshes(RenderPatchFactory rpf) {
-        ArrayList<RenderPatch> list = new ArrayList<RenderPatch>();
+        ArrayList<RenderPatch> list = new ArrayList<>();
         for(int dat = 0; dat < 16; dat++) {
             /* Add center post */
             addBox(rpf, list, 0.375, 0.625, 0.0, 1.0, 0.375, 0.625);
@@ -106,13 +106,13 @@ public class FenceWallBlockRenderer extends CustomRenderer {
                     addBox(rpf, list, 0.4375, 0.5625, 0.75, 0.9275, 0.0, 1.0);
                     break;
             }
-            meshes[dat] = list.toArray(new RenderPatch[list.size()]);
+            meshes[dat] = list.toArray(new RenderPatch[0]);
             list.clear();
         }
     }
 
     private void buildWallMeshes(RenderPatchFactory rpf) {
-        ArrayList<RenderPatch> list = new ArrayList<RenderPatch>();
+        ArrayList<RenderPatch> list = new ArrayList<>();
         for(int dat = 0; dat < 32; dat++) {
             boolean need_post = ((dat & 0xF) == 0) || ((dat & 0x10) == 0x10);
             switch(dat & SIDE_X) {
@@ -144,12 +144,12 @@ public class FenceWallBlockRenderer extends CustomRenderer {
             if(need_post) {
                 addBox(rpf, list, 0.25, 0.75, 0.0, 1.0, 0.25, 0.75);
             }
-            meshes[dat] = list.toArray(new RenderPatch[list.size()]);
+            meshes[dat] = list.toArray(new RenderPatch[0]);
             list.clear();
         }
     }
 
-    private static int[][] sides = {
+    private static final int[][] sides = {
         { 1, 0, 0, SIDE_XP },
         { -1, 0, 0, SIDE_XN },
         { 0, 0, 1, SIDE_ZP },
@@ -160,11 +160,11 @@ public class FenceWallBlockRenderer extends CustomRenderer {
     public RenderPatch[] getRenderPatchList(MapDataContext ctx) {
         /* Build connection map - check each axis */
         int connect = 0;
-        for(int i = 0; i < sides.length; i++) {
-            DynmapBlockState blk = ctx.getBlockTypeAt(sides[i][0], sides[i][1], sides[i][2]);
+        for (int[] side : sides) {
+            DynmapBlockState blk = ctx.getBlockTypeAt(side[0], side[1], side[2]);
             if (blk.isAir()) continue;
             if (link_ids.get(blk.globalStateIndex) || (HDBlockStateTextureMap.getTransparency(blk) == BlockTransparency.OPAQUE)) {
-                connect |= sides[i][3];
+                connect |= side[3];
             }
         }
         if(check_yplus) {

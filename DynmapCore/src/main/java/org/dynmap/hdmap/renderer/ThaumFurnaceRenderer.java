@@ -173,7 +173,7 @@ public class ThaumFurnaceRenderer extends CustomRenderer {
     
     @Override
     public RenderPatch[] getRenderPatchList(MapDataContext ctx) {
-        ArrayList<RenderPatch> list = new ArrayList<RenderPatch>();
+        ArrayList<RenderPatch> list = new ArrayList<>();
         int txtids[] = new int[6];
         if (ctx.getBlockType().stateIndex == 0) {
             for(int i = 0; i < 6; i++) {

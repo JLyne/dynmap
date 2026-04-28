@@ -21,9 +21,10 @@ public class HDBlockPatchModel extends HDBlockModel {
         super(bs, databits, blockset);
         this.patches = patches;
         int max = 0;
-        for(int i = 0; i < patches.length; i++) {
-            if((patches[i] != null) && (patches[i].textureindex > max))
-                max = patches[i].textureindex;
+        for (PatchDefinition patche : patches) {
+            if ((patche != null) && (patche.textureindex > max)) {
+                max = patche.textureindex;
+            }
         }
         this.max_texture = max + 1;
     }

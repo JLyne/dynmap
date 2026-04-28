@@ -1,0 +1,1 @@
+project.ext.set("buildNumber", System.getenv().get("BUILD_NUMBER") ?: "Dev")

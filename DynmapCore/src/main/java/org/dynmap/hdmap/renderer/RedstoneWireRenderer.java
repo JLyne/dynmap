@@ -17,9 +17,9 @@ public class RedstoneWireRenderer extends CustomRenderer {
     private DynmapBlockState blkbs;;
 
     // Patches for bottom - indexed by connection graph (bit0=N,bit1=S,bit2=E,bit3=W)
-    private RenderPatch[] bottom_patches = new RenderPatch[16];
+    private final RenderPatch[] bottom_patches = new RenderPatch[16];
     // Patches for sides - (N, S, E, W)
-    private RenderPatch[] side_patches = new RenderPatch[4];
+    private final RenderPatch[] side_patches = new RenderPatch[4];
     // Array of lists - index: bit 0-3=bottom index, bit4=N side, 5=southside, 6=E side, 7=W side present
     protected RenderPatch[][] meshes = new RenderPatch[256][];
     
@@ -102,7 +102,7 @@ public class RedstoneWireRenderer extends CustomRenderer {
     }
     
     private RenderPatch[] buildMesh(int idx) {
-        ArrayList<RenderPatch> lst = new ArrayList<RenderPatch>();
+        ArrayList<RenderPatch> lst = new ArrayList<>();
         lst.add(bottom_patches[idx & 0xF]);
         /* Add any needed sides */
         for(int i = 0; i < 4; i++) {
@@ -110,6 +110,6 @@ public class RedstoneWireRenderer extends CustomRenderer {
                 lst.add(side_patches[i]);
             }
         }
-        return lst.toArray(new RenderPatch[lst.size()]);
+        return lst.toArray(new RenderPatch[0]);
     }
 }

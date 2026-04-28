@@ -41,29 +41,31 @@ import org.dynmap.utils.Vector3D;
  */
 public class HDBlockModels {
     private static int max_patches;
-    static HashMap<Integer, HDBlockModel> models_by_id_data = new HashMap<Integer, HDBlockModel>();
+    static HDBlockModel[] models_by_id_data = new HDBlockModel[0];
     static PatchDefinitionFactory pdf = new PatchDefinitionFactory();
     static BitSet customModelsRequestingTileData = new BitSet(); // Index by globalStateIndex
     static BitSet changeIgnoredBlocks = new BitSet();   // Index by globalStateIndex
-    private static HashSet<String> loadedmods = new HashSet<String>();
-    private static HashMap<Integer, HDScaledBlockModels> scaled_models_by_scale = new HashMap<Integer, HDScaledBlockModels>();
+    private static final HashSet<String> loadedmods = new HashSet<>();
+    private static final HashMap<Integer, HDScaledBlockModels> scaled_models_by_scale = new HashMap<>();
 
     public static final int getMaxPatchCount() { return max_patches; }
     public static final PatchDefinitionFactory getPatchDefinitionFactory() { return pdf; }
 
     /* Reset model if defined by different block set */
     public static boolean resetIfNotBlockSet(DynmapBlockState blk, String blockset) {
-        HDBlockModel bm = models_by_id_data.get(blk.globalStateIndex);
+        int idx = blk.globalStateIndex;
+        HDBlockModel bm = (idx < models_by_id_data.length) ? models_by_id_data[idx] : null;
         if((bm != null) && (bm.getBlockSet().equals(blockset) == false)) {
             Debug.debug("Reset block model for " + blk + " from " + bm.getBlockSet() + " due to new def from " + blockset);
-            models_by_id_data.remove(blk.globalStateIndex);
+            models_by_id_data[idx] = null;
             return true;
         }
         return false;
     }
     /* Get texture count needed for model */
     public static int getNeededTextureCount(DynmapBlockState blk) {
-        HDBlockModel bm = models_by_id_data.get(blk.globalStateIndex);
+        int idx = blk.globalStateIndex;
+        HDBlockModel bm = (idx < models_by_id_data.length) ? models_by_id_data[idx] : null;
         if(bm != null) {
             return bm.getTextureCount();
         }
@@ -88,18 +90,12 @@ public class HDBlockModels {
 
     private static void remapModel(String bn, String newbn) {
         DynmapBlockState frombs = DynmapBlockState.getBaseStateByName(bn);
-        DynmapBlockState tobs = DynmapBlockState.getBaseStateByName(bn);
+        DynmapBlockState tobs = DynmapBlockState.getBaseStateByName(newbn);
         int fcnt = frombs.getStateCount();
         for (int bs = 0; bs < tobs.getStateCount(); bs++) {
             DynmapBlockState tb = tobs.getState(bs);
-            DynmapBlockState fs = tobs.getState(bs % fcnt);
-            HDBlockModel m = models_by_id_data.get(fs.globalStateIndex);
-            if (m != null) {
-                models_by_id_data.put(tb.globalStateIndex, m);
-            }
-            else {
-                models_by_id_data.remove(tb.globalStateIndex);
-            }
+            DynmapBlockState fs = frombs.getState(bs % fcnt);
+            models_by_id_data[tb.globalStateIndex] = models_by_id_data[fs.globalStateIndex];
             customModelsRequestingTileData.set(tb.globalStateIndex, customModelsRequestingTileData.get(fs.globalStateIndex));
             changeIgnoredBlocks.set(tb.globalStateIndex, changeIgnoredBlocks.get(fs.globalStateIndex));
         }
@@ -113,7 +109,7 @@ public class HDBlockModels {
     public static final String[] getTileEntityFieldsNeeded(DynmapBlockState blk) {
         int idx = blk.globalStateIndex;
         if(customModelsRequestingTileData.get(idx)) {
-            HDBlockModel mod = models_by_id_data.get(idx);
+            HDBlockModel mod = (idx < models_by_id_data.length) ? models_by_id_data[idx] : null;
             if(mod instanceof CustomBlockModel) {
                 return ((CustomBlockModel)mod).render.getTileEntityFieldsNeeded();
             }
@@ -126,7 +122,7 @@ public class HDBlockModels {
      * @return scaled models
      */
     public static HDScaledBlockModels   getModelsForScale(int scale) {
-        HDScaledBlockModels model = scaled_models_by_scale.get(Integer.valueOf(scale));
+        HDScaledBlockModels model = scaled_models_by_scale.get(scale);
         if(model == null) {
             model = new HDScaledBlockModels(scale);
             scaled_models_by_scale.put(scale, model);
@@ -166,7 +162,7 @@ public class HDBlockModels {
         File datadir = core.getDataFolder();
         max_patches = 6;    /* Reset to default */
         /* Reset models-by-ID-Data cache */
-        models_by_id_data.clear();
+        models_by_id_data = new HDBlockModel[DynmapBlockState.getGlobalIndexMax()];
         /* Reset scaled models by scale cache */
         scaled_models_by_scale.clear();
         /* Reset change-ignored flags */
@@ -214,13 +210,13 @@ public class HDBlockModels {
                     }
                     if (zf != null) {
                         try { zf.close(); } catch (IOException e) { }
-                        zf = null;
+                        //zf = null;
                     }
                 }
             }
         }
         // Load external model files (these go before internal versions, to allow external overrides)
-        ArrayList<String> files = new ArrayList<String>();
+        ArrayList<String> files = new ArrayList<>();
         File customdir = new File(datadir, "renderdata");
         addFiles(files, customdir, "");
         for(String fn : files) {
@@ -260,11 +256,11 @@ public class HDBlockModels {
         } finally {
             if (in != null) {
                 try { in.close(); } catch (IOException iox) {}
-                in = null;
+                //in = null;
             }
             if (zf != null) {
                 try { zf.close(); } catch (IOException iox) {}
-                zf = null;
+                //zf = null;
             }
         }
     }
@@ -275,7 +271,7 @@ public class HDBlockModels {
             int off = val.indexOf('+');
             int offset = 0;
             if (off > 0) {
-                offset = Integer.valueOf(val.substring(off+1));
+                offset = Integer.parseInt(val.substring(off+1));
                 val = val.substring(0,  off);
             }
             Integer v = vars.get(val);
@@ -288,8 +284,8 @@ public class HDBlockModels {
                     throw new NumberFormatException("invalid ID - " + val);
                 }
             }
-            if((offset != 0) && (v.intValue() > 0))
-                v = v.intValue() + offset;
+            if((offset != 0) && (v > 0))
+                v = v + offset;
             return v;
         }
         else {
@@ -320,10 +316,10 @@ public class HDBlockModels {
         double xrotorig = 8, yrotorig = 8, zrotorig = 8;
         int modrotx = 0, modroty = 0, modrotz = 0;	// Model level rotation
         boolean shade = true;
-        ArrayList<ModelBoxSide> sides = new ArrayList<ModelBoxSide>();
+        ArrayList<ModelBoxSide> sides = new ArrayList<>();
     };
 
-    private static HashMap<String, BlockSide> toBlockSide = new HashMap<String, BlockSide>();
+    private static final HashMap<String, BlockSide> toBlockSide = new HashMap<>();
     static {
         toBlockSide.put("u", BlockSide.TOP);
         toBlockSide.put("d", BlockSide.BOTTOM);
@@ -349,10 +345,10 @@ public class HDBlockModels {
         Map<DynmapBlockState, BitSet> bsprslt;
         try {
             String line;
-            ArrayList<HDBlockVolumetricModel> modlist = new ArrayList<HDBlockVolumetricModel>();
-            ArrayList<HDBlockPatchModel> pmodlist = new ArrayList<HDBlockPatchModel>();
-            HashMap<String,Integer> varvals = new HashMap<String,Integer>();
-            HashMap<String, PatchDefinition> patchdefs = new HashMap<String, PatchDefinition>();
+            ArrayList<HDBlockVolumetricModel> modlist = new ArrayList<>();
+            ArrayList<HDBlockPatchModel> pmodlist = new ArrayList<>();
+            HashMap<String,Integer> varvals = new HashMap<>();
+            HashMap<String, PatchDefinition> patchdefs = new HashMap<>();
             pdf.setPatchNameMape(patchdefs);
             int layerbits = 0;
             int rownum = 0;
@@ -406,7 +402,7 @@ public class HDBlockModels {
                     }
                     bsprslt = bsp.getMatchingStates();
                     /* If we have everything, build block */
-                    if ((bsprslt.size() > 0) && (scale > 0)) {
+                    if ((!bsprslt.isEmpty()) && (scale > 0)) {
                         modlist.clear();
                         for (DynmapBlockState bblk : bsprslt.keySet()) {
                             if (bblk.isNotAir()) {
@@ -455,7 +451,7 @@ public class HDBlockModels {
                         Log.severe("Invalid rotate ID: " + bs + " on line " + lineNum + " of file: " + fname);
                         continue;
                     }
-                    HDBlockModel mod = models_by_id_data.get(bs.globalStateIndex);
+                    HDBlockModel mod = models_by_id_data[bs.globalStateIndex];
                     if (modlist.isEmpty()) {
                     }
                     else if ((mod != null) && ((rot%90) == 0) && (mod instanceof HDBlockVolumetricModel)) {
@@ -492,7 +488,6 @@ public class HDBlockModels {
                     }
                     else {
                         Log.severe("Invalid rotate error - line " + lineNum + " of file:  " + fname);
-                        continue;
                     }
                 }
                 else if (typeid.equals("patchrotate")) {
@@ -524,7 +519,7 @@ public class HDBlockModels {
                         Log.severe("Invalid patchrotate ID: " + bs + " on line " + lineNum + "of file: " + fname);
                         continue;
                     }
-                    HDBlockModel mod = models_by_id_data.get(bs.globalStateIndex);
+                    HDBlockModel mod = models_by_id_data[bs.globalStateIndex];
                     if (pmodlist.isEmpty()) {
                     }
                     else if ((mod != null) && (mod instanceof HDBlockPatchModel)) {
@@ -581,14 +576,14 @@ public class HDBlockModels {
                 }
                 else if (typeid.equals("var")) {  /* Test if variable declaration */
                     String args[] = line.split(",");
-                    for(int i = 0; i < args.length; i++) {
-                        String[] v = args[i].split("=");
+                    for (String arg : args) {
+                        String[] v = arg.split("=");
                         if(v.length < 2) {
                             Log.severe("Format error - line " + lineNum + " of file: " + fname);
                             return;
                         }
                         try {
-                            int val = Integer.valueOf(v[1]);    /* Parse default value */
+                            int val = Integer.parseInt(v[1]);    /* Parse default value */
                             int parmval = config.getInteger(v[0], val); /* Read value, with applied default */
                             varvals.put(v[0], parmval); /* And save value */
                         } catch (NumberFormatException nfx) {
@@ -625,73 +620,87 @@ public class HDBlockModels {
                     for(String a : args) {
                         String[] av = a.split("=");
                         if(av.length < 2) continue;
-                        if(av[0].equals("id")) {
-                            patchid = av[1];
-                        }
-                        else if(av[0].equals("Ox")) {
-                            p_x0 = Double.parseDouble(av[1]);
-                        }
-                        else if(av[0].equals("Oy")) {
-                            p_y0 = Double.parseDouble(av[1]);
-                        }
-                        else if(av[0].equals("Oz")) {
-                            p_z0 = Double.parseDouble(av[1]);
-                        }
-                        else if(av[0].equals("Ux")) {
-                            p_xu = Double.parseDouble(av[1]);
-                        }
-                        else if(av[0].equals("Uy")) {
-                            p_yu = Double.parseDouble(av[1]);
-                        }
-                        else if(av[0].equals("Uz")) {
-                            p_zu = Double.parseDouble(av[1]);
-                        }
-                        else if(av[0].equals("Vx")) {
-                            p_xv = Double.parseDouble(av[1]);
-                        }
-                        else if(av[0].equals("Vy")) {
-                            p_yv = Double.parseDouble(av[1]);
-                        }
-                        else if(av[0].equals("Vz")) {
-                            p_zv = Double.parseDouble(av[1]);
-                        }
-                        else if(av[0].equals("Umin")) {
-                            p_umin = Double.parseDouble(av[1]);
-                        }
-                        else if(av[0].equals("Umax")) {
-                            p_umax = Double.parseDouble(av[1]);
-                        }
-                        else if(av[0].equals("Vmin")) {
-                            p_vmin = Double.parseDouble(av[1]);
-                        }
-                        else if(av[0].equals("Vmax")) {
-                            p_vmax = Double.parseDouble(av[1]);
-                        }
-                        else if(av[0].equals("UplusVmax")) {
-                            Log.warning("UplusVmax deprecated - use VmaxAtUMax - line " + lineNum + " of file: " + fname);
-                            p_uplusvmax = Double.parseDouble(av[1]);
-                        }
-                        else if(av[0].equals("VmaxAtUMax")) {
-                            p_vmaxatumax = Double.parseDouble(av[1]);
-                        }
-                        else if(av[0].equals("VminAtUMax")) {
-                            p_vminatumax = Double.parseDouble(av[1]);
-                        }
-                        else if(av[0].equals("visibility")) {
-                            if(av[1].equals("top"))
-                                p_sidevis = SideVisible.TOP;
-                            else if(av[1].equals("topflip"))
-                                p_sidevis = SideVisible.TOPFLIP;
-                            else if(av[1].equals("topflipv"))
-                                p_sidevis = SideVisible.TOPFLIPV;
-                            else if(av[1].equals("topfliphv"))
-                                p_sidevis = SideVisible.TOPFLIPHV;
-                            else if(av[1].equals("bottom"))
-                                p_sidevis = SideVisible.BOTTOM;
-                            else if(av[1].equals("flip"))
-                                p_sidevis = SideVisible.FLIP;
-                            else
-                                p_sidevis = SideVisible.BOTH;
+                        switch (av[0]) {
+                            case "id":
+                                patchid = av[1];
+                                break;
+                            case "Ox":
+                                p_x0 = Double.parseDouble(av[1]);
+                                break;
+                            case "Oy":
+                                p_y0 = Double.parseDouble(av[1]);
+                                break;
+                            case "Oz":
+                                p_z0 = Double.parseDouble(av[1]);
+                                break;
+                            case "Ux":
+                                p_xu = Double.parseDouble(av[1]);
+                                break;
+                            case "Uy":
+                                p_yu = Double.parseDouble(av[1]);
+                                break;
+                            case "Uz":
+                                p_zu = Double.parseDouble(av[1]);
+                                break;
+                            case "Vx":
+                                p_xv = Double.parseDouble(av[1]);
+                                break;
+                            case "Vy":
+                                p_yv = Double.parseDouble(av[1]);
+                                break;
+                            case "Vz":
+                                p_zv = Double.parseDouble(av[1]);
+                                break;
+                            case "Umin":
+                                p_umin = Double.parseDouble(av[1]);
+                                break;
+                            case "Umax":
+                                p_umax = Double.parseDouble(av[1]);
+                                break;
+                            case "Vmin":
+                                p_vmin = Double.parseDouble(av[1]);
+                                break;
+                            case "Vmax":
+                                p_vmax = Double.parseDouble(av[1]);
+                                break;
+                            case "UplusVmax":
+                                Log.warning("UplusVmax deprecated - use VmaxAtUMax - line " + lineNum + " of file: " + fname);
+                                p_uplusvmax = Double.parseDouble(av[1]);
+                                break;
+                            case "VmaxAtUMax":
+                                p_vmaxatumax = Double.parseDouble(av[1]);
+                                break;
+                            case "VminAtUMax":
+                                p_vminatumax = Double.parseDouble(av[1]);
+                                break;
+                            case "visibility":
+                                switch (av[1]) {
+                                    case "top":
+                                        p_sidevis = SideVisible.TOP;
+                                        break;
+                                    case "topflip":
+                                        p_sidevis = SideVisible.TOPFLIP;
+                                        break;
+                                    case "topflipv":
+                                        p_sidevis = SideVisible.TOPFLIPV;
+                                        break;
+                                    case "topfliphv":
+                                        p_sidevis = SideVisible.TOPFLIPHV;
+                                        break;
+                                    case "bottom":
+                                        p_sidevis = SideVisible.BOTTOM;
+                                        break;
+                                    case "flip":
+                                        p_sidevis = SideVisible.FLIP;
+                                        break;
+                                    default:
+                                        p_sidevis = SideVisible.BOTH;
+                                        break;
+                                }
+                                break;
+
+                            default:
+                                break;
                         }
                     }
                     // Deprecated: If set, compute umax, vmax, and vmaxatumax
@@ -721,7 +730,7 @@ public class HDBlockModels {
                     bsp.processLine(modname, line, lineNum, varvals);
 
                     String[] args = line.split(",");
-                    ArrayList<PatchDefinition> patches = new ArrayList<PatchDefinition>();
+                    ArrayList<PatchDefinition> patches = new ArrayList<>();
                     for(String a : args) {
                         String[] av = a.split("=");
                         if(av.length < 2) continue;
@@ -759,8 +768,8 @@ public class HDBlockModels {
                     /* If we have everything, build block */
                     bsprslt = bsp.getMatchingStates();
                     pmodlist.clear();
-                    if (bsprslt.size() > 0) {
-                        PatchDefinition[] patcharray = patches.toArray(new PatchDefinition[patches.size()]);
+                    if (!bsprslt.isEmpty()) {
+                        PatchDefinition[] patcharray = patches.toArray(new PatchDefinition[0]);
                         if(patcharray.length > max_patches)
                             max_patches = patcharray.length;
                         for (DynmapBlockState bs : bsprslt.keySet()) {
@@ -788,37 +797,40 @@ public class HDBlockModels {
                     for(String a : args) {
                         String[] av = a.split("=");
                         if(av.length < 2) continue;
-                        if(av[0].equals("xmin")) {
-                            xmin = Double.parseDouble(av[1]);
-                        }
-                        else if(av[0].equals("xmax")) {
-                            xmax = Double.parseDouble(av[1]);
-                        }
-                        else if(av[0].equals("ymin")) {
-                            ymin = Double.parseDouble(av[1]);
-                        }
-                        else if(av[0].equals("ymax")) {
-                            ymax = Double.parseDouble(av[1]);
-                        }
-                        else if(av[0].equals("zmin")) {
-                            zmin = Double.parseDouble(av[1]);
-                        }
-                        else if(av[0].equals("zmax")) {
-                            zmax = Double.parseDouble(av[1]);
-                        }
-                        else if(av[0].equals("patches")) {
-                            String[] v = av[1].split("/");
-                            patchlist = new int[6];
-                            for (int vidx = 0; (vidx < v.length) && (vidx < patchlist.length); vidx++) {
-                                patchlist[vidx] = getIntValue(varvals, v[vidx]);
-                            }
+                        switch (av[0]) {
+                            case "xmin":
+                                xmin = Double.parseDouble(av[1]);
+                                break;
+                            case "xmax":
+                                xmax = Double.parseDouble(av[1]);
+                                break;
+                            case "ymin":
+                                ymin = Double.parseDouble(av[1]);
+                                break;
+                            case "ymax":
+                                ymax = Double.parseDouble(av[1]);
+                                break;
+                            case "zmin":
+                                zmin = Double.parseDouble(av[1]);
+                                break;
+                            case "zmax":
+                                zmax = Double.parseDouble(av[1]);
+                                break;
+                            case "patches":
+                                String[] v = av[1].split("/");
+                                patchlist = new int[6];
+                                for (int vidx = 0; (vidx < v.length) && (vidx < patchlist.length); vidx++) {
+                                    patchlist[vidx] = getIntValue(varvals, v[vidx]);
+                                }   break;
+                            default:
+                                break;
                         }
                     }
                     /* If we have everything, build block */
                     pmodlist.clear();
                     bsprslt = bsp.getMatchingStates();
-                    if (bsprslt.size() > 0) {
-                        ArrayList<RenderPatch> pd = new ArrayList<RenderPatch>();
+                    if (!bsprslt.isEmpty()) {
+                        ArrayList<RenderPatch> pd = new ArrayList<>();
                         CustomRenderer.addBox(pdf, pd, xmin, xmax, ymin, ymax, zmin, zmax, patchlist);
                         PatchDefinition[] patcharray = new PatchDefinition[pd.size()];
                         for (int i = 0; i < patcharray.length; i++) {
@@ -846,7 +858,7 @@ public class HDBlockModels {
                     bsp.processLine(modname, line, lineNum, varvals);
 
                     String[] args = line.split(",");
-                    ArrayList<BoxLimits> boxes = new ArrayList<BoxLimits>();
+                    ArrayList<BoxLimits> boxes = new ArrayList<>();
                     for (String a : args) {
                         String[] av = a.split("=");
                         if(av.length < 2) continue;
@@ -880,8 +892,8 @@ public class HDBlockModels {
                     /* If we have everything, build block */
                     bsprslt = bsp.getMatchingStates();
                     pmodlist.clear();
-                    if (bsprslt.size() > 0) {
-                        ArrayList<RenderPatch> pd = new ArrayList<RenderPatch>();
+                    if (!bsprslt.isEmpty()) {
+                        ArrayList<RenderPatch> pd = new ArrayList<>();
 
                         for (BoxLimits bl : boxes) {
                             CustomRenderer.addBox(pdf, pd, bl.xmin, bl.xmax, bl.ymin, bl.ymax, bl.zmin, bl.zmax, bl.patches, bl.yrot);
@@ -912,7 +924,7 @@ public class HDBlockModels {
                     bsp.processLine(modname, line, lineNum, varvals);
 
                     String[] args = line.split(",");
-                    ArrayList<ModelBox> boxes = new ArrayList<ModelBox>();
+                    ArrayList<ModelBox> boxes = new ArrayList<>();
                     for (String a : args) {
                         String[] av = a.split("=");
                         if(av.length < 2) continue;
@@ -1014,8 +1026,8 @@ public class HDBlockModels {
                     /* If we have everything, build block */
                     bsprslt = bsp.getMatchingStates();
                     pmodlist.clear();
-                    if (bsprslt.size() > 0) {
-                        ArrayList<PatchDefinition> pd = new ArrayList<PatchDefinition>();
+                    if (!bsprslt.isEmpty()) {
+                        ArrayList<PatchDefinition> pd = new ArrayList<>();
 
                         for (ModelBox bl : boxes) {
                             // Loop through faces
@@ -1066,30 +1078,34 @@ public class HDBlockModels {
                     // Parse block states
                     bsp.processLine(modname, line, lineNum, varvals);
 
-                    HashMap<String,String> custargs = new HashMap<String,String>();
+                    HashMap<String,String> custargs = new HashMap<>();
                     String[] args = line.split(",");
                     String cls = null;
                     for (String a : args) {
                         String[] av = a.split("=");
                         if (av.length < 2) continue;
-                        if (av[0].equals("id") || av[0].equals("data") || av[0].equals("state")) {
+                        switch (av[0]) {
                             // Skip block state args - should not be bassed to custom block handler
-                        }
-                        else if (av[0].equals("class")) {
-                            cls = av[1];
-                        }
-                        else {
-                            /* See if substitution value available */
-                            Integer vv = varvals.get(av[1]);
-                            if(vv == null)
-                                custargs.put(av[0], av[1]);
-                            else
-                                custargs.put(av[0], vv.toString());
+                            case "id":
+                            case "data":
+                            case "state":
+                                break;
+                            case "class":
+                                cls = av[1];
+                                break;
+                            default:
+                                /* See if substitution value available */
+                                Integer vv = varvals.get(av[1]);
+                                if(vv == null)
+                                    custargs.put(av[0], av[1]);
+                                else
+                                    custargs.put(av[0], vv.toString());
+                                break;
                         }
                     }
                     /* If we have everything, build block */
                     bsprslt = bsp.getMatchingStates();
-                    if ((bsprslt.size() > 0) && (cls != null)) {
+                    if ((!bsprslt.isEmpty()) && (cls != null)) {
                         for (DynmapBlockState bs : bsprslt.keySet()) {
                             if (bs.isNotAir()) {
                                 CustomBlockModel cbm = new CustomBlockModel(bs, bsprslt.get(bs), cls, custargs, blockset);
@@ -1177,19 +1193,18 @@ public class HDBlockModels {
         } catch (IOException iox) {
             Log.severe("Error reading models.txt - " + iox.toString());
         } catch (NumberFormatException nfx) {
-            Log.severe("Format error - line " + rdr.getLineNumber() + " of file: " + fname + ": " + nfx.getMessage());
+            Log.severe("Format error - line " + ((rdr != null) ? rdr.getLineNumber() : "?") + " of file: " + fname + ": " + nfx.getMessage());
         } finally {
             if(rdr != null) {
                 try {
                     rdr.close();
-                    rdr = null;
                 } catch (IOException e) {
                 }
             }
             pdf.setPatchNameMape(null);
         }
     }
-    private static long vscale[] = { 10000000000L, 100000000, 1000000, 10000, 100, 1 };
+    private static final long vscale[] = { 10000000000L, 100000000, 1000000, 10000, 100, 1 };
 
     private static String normalizeVersion(String v) {
         StringBuilder v2 = new StringBuilder();
@@ -1249,9 +1264,6 @@ public class HDBlockModels {
         if ((low.length() > 0) && (parseVersion(low, false) > v)) {
             return false;
         }
-        if ((high.length() > 0) && (parseVersion(high, true) < v)) {
-            return false;
-        }
-        return true;
+        return !((high.length() > 0) && (parseVersion(high, true) < v));
     }
 }

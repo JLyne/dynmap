@@ -52,7 +52,13 @@ public class HDMapTile extends MapTile {
 
     @Override
     public int hashCode() {
-        return tx ^ ty ^ perspective.hashCode() ^ world.hashCode() ^ boostzoom ^ tilescale;
+        int h = perspective.hashCode();
+        h = h * 31 + world.hashCode();
+        h = h * 31 + tx;
+        h = h * 31 + ty;
+        h = h * 31 + boostzoom;
+        h = h * 31 + tilescale;
+        return h;
     }
 
     @Override
@@ -87,19 +93,24 @@ public class HDMapTile extends MapTile {
     @Override
     public boolean isBlockTypeDataNeeded() { return MapManager.mapman.hdmapman.isBlockTypeDataNeeded(this); }
     
+    @Override
     public boolean render(MapChunkCache cache, String mapname) {
         return perspective.render(cache, this, mapname);
     }
     
+    @Override
     public List<DynmapChunk> getRequiredChunks() {
         return perspective.getRequiredChunks(this);
     }
     
+    @Override
     public MapTile[] getAdjecentTiles() {
         return perspective.getAdjecentTiles(this);
     }
     
+    @Override
     public int tileOrdinalX() { return tx; }
+    @Override
     public int tileOrdinalY() { return ty; }
 
 }

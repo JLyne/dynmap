@@ -15,11 +15,11 @@ import org.dynmap.utils.MapChunkCache;
 import org.dynmap.utils.MapIterator;
 
 public class HDMapManager {
-    public HashMap<String, HDShader> shaders = new HashMap<String, HDShader>();
-    public HashMap<String, HDPerspective> perspectives = new HashMap<String, HDPerspective>();
-    public HashMap<String, HDLighting> lightings = new HashMap<String, HDLighting>();
-    public HashSet<HDMap> maps = new HashSet<HDMap>();
-    public HashMap<String, ArrayList<HDMap>> maps_by_world_perspective = new HashMap<String, ArrayList<HDMap>>();
+    public HashMap<String, HDShader> shaders = new HashMap<>();
+    public HashMap<String, HDPerspective> perspectives = new HashMap<>();
+    public HashMap<String, HDLighting> lightings = new HashMap<>();
+    public HashSet<HDMap> maps = new HashSet<>();
+    public HashMap<String, ArrayList<HDMap>> maps_by_world_perspective = new HashMap<>();
  
     public void loadHDShaders(DynmapCore core) {
         Log.verboseinfo("Loading shaders...");
@@ -122,7 +122,7 @@ public class HDMapManager {
         if(w == null) {
             return new HDShaderState[0];
         }
-        ArrayList<HDShaderState> shaders = new ArrayList<HDShaderState>();
+        ArrayList<HDShaderState> shaderList = new ArrayList<>();
         for(MapType map : w.maps) {
             if(map instanceof HDMap) {
                 HDMap hdmap = (HDMap)map;
@@ -137,11 +137,11 @@ public class HDMapManager {
                         continue;
                     }
 
-                    shaders.add(hdmap.getShader().getStateInstance(hdmap, cache, mapiter, scale));
+                    shaderList.add(hdmap.getShader().getStateInstance(hdmap, cache, mapiter, scale));
                 }
             }
         }
-        return shaders.toArray(new HDShaderState[shaders.size()]);
+        return shaderList.toArray(new HDShaderState[0]);
     }
     
     private static final int BIOMEDATAFLAG = 0;
@@ -165,7 +165,7 @@ public class HDMapManager {
         return getCachedFlags(t)[BLOCKTYPEFLAG];
     }
     
-    private HashMap<String, boolean[]> cached_data_flags_by_world_perspective = new HashMap<String, boolean[]>();
+    private final HashMap<String, boolean[]> cached_data_flags_by_world_perspective = new HashMap<>();
     
     private boolean[] getCachedFlags(HDMapTile t) {
         String w = t.getDynmapWorld().getName();

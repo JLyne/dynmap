@@ -14,10 +14,7 @@ public class TFCLooseRockRenderer extends CustomRenderer {
     
     @Override
     public boolean initializeRenderer(RenderPatchFactory rpf, String blkname, BitSet blockdatamask, Map<String,String> custparm) {
-        if(!super.initializeRenderer(rpf, blkname, blockdatamask, custparm))
-            return false;
-
-        return true;
+        return super.initializeRenderer(rpf, blkname, blockdatamask, custparm);
     }
 
     @Override
@@ -25,10 +22,10 @@ public class TFCLooseRockRenderer extends CustomRenderer {
         return 1;
     }
     
-    private int[] patches = { 0, 0, 0, 0, 0, 0 };
+    private final int[] patches = { 0, 0, 0, 0, 0, 0 };
     @Override
     public RenderPatch[] getRenderPatchList(MapDataContext ctx) {
-        ArrayList<RenderPatch> list = new ArrayList<RenderPatch>();
+        ArrayList<RenderPatch> list = new ArrayList<>();
         /* Generate seed from coordinates */
         int seed = (ctx.getX() * ctx.getZ()) + ctx.getY();
         Random R = new Random(seed);

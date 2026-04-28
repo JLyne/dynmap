@@ -38,7 +38,7 @@ public class FenceGateBlockRenderer extends CustomRenderer {
     }
     
     private void buildMeshes(RenderPatchFactory rpf) {
-        ArrayList<RenderPatch> list = new ArrayList<RenderPatch>();
+        ArrayList<RenderPatch> list = new ArrayList<>();
         for(int dat = 0; dat < 8; dat++) {
             // Add posts
             if ((dat & 1) == 0) {
@@ -96,7 +96,7 @@ public class FenceGateBlockRenderer extends CustomRenderer {
                 }
             }
             
-            meshes[dat] = list.toArray(new RenderPatch[list.size()]);
+            meshes[dat] = list.toArray(new RenderPatch[0]);
             
             list.clear();
         }

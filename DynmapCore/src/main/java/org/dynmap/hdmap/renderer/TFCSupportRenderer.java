@@ -13,8 +13,8 @@ import org.dynmap.renderer.RenderPatchFactory;
 
 public class TFCSupportRenderer extends CustomRenderer {
     private boolean isVert;
-    private static BitSet vertid = new BitSet();
-    private static BitSet horizid = new BitSet();
+    private static final BitSet vertid = new BitSet();
+    private static final BitSet horizid = new BitSet();
 
     private static final int SIDE_XP = 0x1;
     private static final int SIDE_XN = 0x2;
@@ -25,7 +25,7 @@ public class TFCSupportRenderer extends CustomRenderer {
     private static final int SIDE_YN = 0x10;
 
     // Meshes, indexed by connection combination (bit 0=X+, bit 1=X-, bit 2=Z+, bit 3=Z-, bit 4=Y-)
-    private RenderPatch[][] meshes = new RenderPatch[32][];
+    private final RenderPatch[][] meshes = new RenderPatch[32][];
     
     private void setID(BitSet set, String bname) {
         DynmapBlockState bbs = DynmapBlockState.getBaseStateByName(bname);
@@ -65,7 +65,7 @@ public class TFCSupportRenderer extends CustomRenderer {
     }
 
     private void buildMeshes(RenderPatchFactory rpf) {
-        ArrayList<RenderPatch> list = new ArrayList<RenderPatch>();
+        ArrayList<RenderPatch> list = new ArrayList<>();
         for(int dat = 0; dat < 32; dat++) {
             switch(dat & SIDE_X) {
                 case SIDE_XP: // Just X+
@@ -96,12 +96,12 @@ public class TFCSupportRenderer extends CustomRenderer {
             else {
                 addBox(rpf, list, 0.25, 0.75, 0.5, 1.0, 0.25, 0.75);
             }
-            meshes[dat] = list.toArray(new RenderPatch[list.size()]);
+            meshes[dat] = list.toArray(new RenderPatch[0]);
             list.clear();
         }
     }
 
-    private static int[][] sides = {
+    private static final int[][] sides = {
         { 1, 0, 0, SIDE_XP },
         { -1, 0, 0, SIDE_XN },
         { 0, 0, 1, SIDE_ZP },
@@ -112,11 +112,11 @@ public class TFCSupportRenderer extends CustomRenderer {
     public RenderPatch[] getRenderPatchList(MapDataContext ctx) {
         /* Build connection map - check each axis */
         int connect = 0;
-        for (int i = 0; i < sides.length; i++) {
-            DynmapBlockState blk = ctx.getBlockTypeAt(sides[i][0], sides[i][1], sides[i][2]);
+        for (int[] side : sides) {
+            DynmapBlockState blk = ctx.getBlockTypeAt(side[0], side[1], side[2]);
             if (blk.isAir()) continue;
             if (vertid.get(blk.globalStateIndex) || horizid.get(blk.globalStateIndex)) {
-                connect |= sides[i][3];
+                connect |= side[3];
             }
         }
         if (!isVert) {   /* Link horizontal to verticals below */

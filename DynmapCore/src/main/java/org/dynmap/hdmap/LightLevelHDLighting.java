@@ -24,6 +24,7 @@ public class LightLevelHDLighting extends DefaultHDLighting {
     }
         
     /* Apply lighting to given pixel colors (1 outcolor if normal, 2 if night/day) */
+    @Override
     public void    applyLighting(HDPerspectiveState ps, HDShaderState ss, Color incolor, Color[] outcolor) {
         super.applyLighting(ps, ss, incolor, outcolor);    // Apply default lighting (outcolors will be grayscale)
         // Compute light levels
@@ -51,12 +52,15 @@ public class LightLevelHDLighting extends DefaultHDLighting {
         }
     }
     /* Test if night/day is enabled for this renderer */
+    @Override
     public boolean isNightAndDayEnabled() { return night_and_day; }
     
     /* Test if sky light level needed */
+    @Override
     public boolean isSkyLightLevelNeeded() { return true; }
     
     /* Test if emitted light level needed */
+    @Override
     public boolean isEmittedLightLevelNeeded() { return true; }    
 
     @Override

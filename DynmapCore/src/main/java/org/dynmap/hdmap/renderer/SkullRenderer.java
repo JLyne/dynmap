@@ -16,14 +16,14 @@ public class SkullRenderer extends CustomRenderer {
     private static final String[] tileFields = { "SkullType", "Rot" };
     
     private RenderPatch basemesh[];
-    private RenderPatch meshes[][] = new RenderPatch[NUM_FACES * NUM_DIRECTIONS][];
+    private final RenderPatch meshes[][] = new RenderPatch[NUM_FACES * NUM_DIRECTIONS][];
     
     @Override
     public boolean initializeRenderer(RenderPatchFactory rpf, String blkname, BitSet blockdatamask, Map<String,String> custparm) {
         if(!super.initializeRenderer(rpf, blkname, blockdatamask, custparm))
             return false;
 
-        ArrayList<RenderPatch> list = new ArrayList<RenderPatch>();
+        ArrayList<RenderPatch> list = new ArrayList<>();
         list.add(rpf.getPatch(0.75, 0.0, 0.25, 0.25, 0.0, 0.25, 0.75, 0.0, 0.75, 0, 1, 0, 1, SideVisible.TOP, 0));
         list.add(rpf.getPatch(0.75, 0.5, 0.25, 0.25, 0.5, 0.25, 0.75, 0.5, 0.75, 0, 1, 0, 1, SideVisible.TOP, 0));
         RenderPatch side = rpf.getPatch(0.75, 0.0, 0.25, 0.25, 0.0, 0.25, 0.75, 0.5, 0.25, 0, 1, 0, 1, SideVisible.TOP, 0);
@@ -34,7 +34,7 @@ public class SkullRenderer extends CustomRenderer {
         list.add(side);
         list.add(side2);
         list.add(side3);
-        basemesh = list.toArray(new RenderPatch[list.size()]);
+        basemesh = list.toArray(new RenderPatch[0]);
         return true;
     }
 

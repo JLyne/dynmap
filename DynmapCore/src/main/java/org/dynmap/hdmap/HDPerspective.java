@@ -36,5 +36,6 @@ public interface HDPerspective {
     
     public void transformWorldToMapCoord(Vector3D input, Vector3D rslt);
 
+    @Override
     public int hashCode();
 }

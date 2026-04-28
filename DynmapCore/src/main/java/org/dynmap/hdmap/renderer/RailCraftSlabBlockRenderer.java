@@ -15,10 +15,10 @@ public class RailCraftSlabBlockRenderer extends CustomRenderer {
     private static final int TEXTURE_SIDES = 0;
     private static final int TEXTURE_TOP = 1;
     private static final int TEXTURE_BOTTOM = 2;
-    private static BitSet stair_ids = new BitSet();
+    private static final BitSet stair_ids = new BitSet();
         
     // Array of meshes for normal steps - index = (0=bottom, 1=top, 2=double)
-    private RenderPatch[][] stepmeshes = new RenderPatch[3][];
+    private final RenderPatch[][] stepmeshes = new RenderPatch[3][];
     
     private int textsetcnt = 0;
     private String[] tilefields = null;
@@ -76,7 +76,7 @@ public class RailCraftSlabBlockRenderer extends CustomRenderer {
     }
     
     private RenderPatch[] buildStepMeshes(RenderPatchFactory rpf, int dat) {
-        ArrayList<RenderPatch> list = new ArrayList<RenderPatch>();
+        ArrayList<RenderPatch> list = new ArrayList<>();
         switch (dat) {
             case 0:
                 addBox(rpf, list, 0, 1, 0.0, 0.5, 0, 1);
@@ -88,7 +88,7 @@ public class RailCraftSlabBlockRenderer extends CustomRenderer {
                 addBox(rpf, list, 0, 1, 0, 1, 0, 1);
                 break;
         }
-        return list.toArray(new RenderPatch[list.size()]);
+        return list.toArray(new RenderPatch[0]);
     }
     
     @Override

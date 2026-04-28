@@ -26,15 +26,15 @@ import org.dynmap.utils.MapIterator;
  * Connected Texture Mod (CTM) handler
  */
 public class CTMTexturePack {
-    private String[] ctpfiles;
-    private TexturePackLoader tpl;
+    private final String[] ctpfiles;
+    private final TexturePackLoader tpl;
     private CTMProps[][] bytilelist;
     private CTMProps[][] bybaseblockstatelist;
     private BitSet mappedtiles;
     private BitSet mappedblocks;
     private String[] biomenames;
     
-    private String vanillatextures;
+    private final String vanillatextures;
     
     static final int BOTTOM_FACE = 0; // 0, -1, 0
     static final int TOP_FACE = 1; // 0, 1, 0
@@ -146,7 +146,7 @@ public class CTMTexturePack {
     public enum CTMConnect {
         NONE, BLOCK, TILE, MATERIAL, UNKNOWN
     }
-    public static final int FACE_BOTTOM = (1 << 0);
+    public static final int FACE_BOTTOM = 1;
     public static final int FACE_TOP = (1 << 1);
     public static final int FACE_NORTH = (1 << 2);
     public static final int FACE_SOUTH = (1 << 3);
@@ -196,12 +196,12 @@ public class CTMTexturePack {
         private String[] tokenize(String v, String split)
         {
             StringTokenizer tok = new StringTokenizer(v, split);
-            ArrayList<String> rslt = new ArrayList<String>();
+            ArrayList<String> rslt = new ArrayList<>();
 
             while (tok.hasMoreTokens()) {
                 rslt.add(tok.nextToken());
             }
-            return rslt.toArray(new String[rslt.size()]);
+            return rslt.toArray(new String[0]);
         }
 
         private void getFaces(Properties p) {
@@ -209,33 +209,36 @@ public class CTMTexturePack {
             this.faces = 0;
             String[] tok = v.split("\\s+");
             for(String t : tok) {
-                if (t.equals("bottom")) {
-                    this.faces |= FACE_BOTTOM;
-                }
-                else if (t.equals("top")) {
-                    this.faces |= FACE_TOP;
-                }
-                else if (t.equals("north")) {
-                    this.faces |= FACE_NORTH;
-                }
-                else if (t.equals("south")) {
-                    this.faces |= FACE_SOUTH;
-                }
-                else if (t.equals("east")) {
-                    this.faces |= FACE_EAST;
-                }
-                else if (t.equals("west")) {
-                    this.faces |= FACE_WEST;
-                }
-                else if (t.equals("sides") || t.equals("side")) {
-                    this.faces |= FACE_SIDES;
-                }
-                else if (t.equals("all")) {
-                    this.faces |= FACE_ALL;
-                }
-                else {
-                    Log.info("Unknown face in CTM file: " + t);
-                    this.faces |= FACE_UNKNOWN;
+                switch (t) {
+                    case "bottom":
+                        this.faces |= FACE_BOTTOM;
+                        break;
+                    case "top":
+                        this.faces |= FACE_TOP;
+                        break;
+                    case "north":
+                        this.faces |= FACE_NORTH;
+                        break;
+                    case "south":
+                        this.faces |= FACE_SOUTH;
+                        break;
+                    case "east":
+                        this.faces |= FACE_EAST;
+                        break;
+                    case "west":
+                        this.faces |= FACE_WEST;
+                        break;
+                    case "sides":
+                    case "side":
+                        this.faces |= FACE_SIDES;
+                        break;
+                    case "all":
+                        this.faces |= FACE_ALL;
+                        break;
+                    default:
+                        Log.info("Unknown face in CTM file: " + t);
+                        this.faces |= FACE_UNKNOWN;
+                        break;
                 }
             }
         }
@@ -253,13 +256,13 @@ public class CTMTexturePack {
             String v = p.getProperty(fld);
             if(v == null) return null;
             String[] tok = tokenize(v, ", ");
-            ArrayList<Integer> rslt = new ArrayList<Integer>();
+            ArrayList<Integer> rslt = new ArrayList<>();
             for(String t : tok) {
                 t = t.trim();
                 String[] vtok = tokenize(t, "-");
                 if(vtok.length == 1) {  /* One value */
                     try {
-                        rslt.add(Integer.parseInt(vtok[0]));
+                        rslt.add(Integer.valueOf(vtok[0]));
                     } catch (NumberFormatException nfx) {
                         Log.info("Bad integer in list: " + vtok[0]);
                     }
@@ -311,7 +314,7 @@ public class CTMTexturePack {
         	}
         }
         private int[] getIDList(Properties properties, String key, String type) {
-            Set<Integer> list = new HashSet<Integer>();
+            Set<Integer> list = new HashSet<>();
             String property = properties.getProperty(key, "");
             for (String token : property.split("\\s+")) {
                 if (token.equals("")) {
@@ -387,65 +390,77 @@ public class CTMTexturePack {
 
         private void getMethod(Properties p) {
             String v = p.getProperty("method", "default").trim().toLowerCase();
-            if (v.equals("ctm") || v.equals("glass") || v.equals("default")) {
-                method = CTMMethod.CTM;
-            }
-            else if (v.equals("horizontal") || v.equals("bookshelf")) {
-                method = CTMMethod.HORIZONTAL;
-            }
-            else if (v.equals("vertical")) {
-                method = CTMMethod.VERTICAL;
-            }
-            else if (v.equals("vertical+horizontal") || v.equals("v+h")) {
-                method = CTMMethod.VERTICAL_HORIZONTAL;
-            }
-            else if (v.equals("horizontal+vertical") || v.equals("h+v")) {
-                method = CTMMethod.HORIZONTAL_VERTICAL;
-            }
-            else if (v.equals("top") || v.equals("sandstone")) {
-                method = CTMMethod.TOP;
-            }
-            else if (v.equals("random")) {
-                method = CTMMethod.RANDOM;
-            }
-            else if (v.equals("repeat") || v.equals("pattern")) {
-                method = CTMMethod.REPEAT;
-            }
-            else if (v.equals("fixed") || v.equals("static")) {
-                method = CTMMethod.FIXED;
-            }
-            else {
-                Log.info("Invalid CTM Method: " + v);
-                method = CTMMethod.NONE;
+            switch (v) {
+                case "ctm":
+                case "glass":
+                case "default":
+                    method = CTMMethod.CTM;
+                    break;
+                case "horizontal":
+                case "bookshelf":
+                    method = CTMMethod.HORIZONTAL;
+                    break;
+                case "vertical":
+                    method = CTMMethod.VERTICAL;
+                    break;
+                case "vertical+horizontal":
+                case "v+h":
+                    method = CTMMethod.VERTICAL_HORIZONTAL;
+                    break;
+                case "horizontal+vertical":
+                case "h+v":
+                    method = CTMMethod.HORIZONTAL_VERTICAL;
+                    break;
+                case "top":
+                case "sandstone":
+                    method = CTMMethod.TOP;
+                    break;
+                case "random":
+                    method = CTMMethod.RANDOM;
+                    break;
+                case "repeat":
+                case "pattern":
+                    method = CTMMethod.REPEAT;
+                    break;
+                case "fixed":
+                case "static":
+                    method = CTMMethod.FIXED;
+                    break;
+                default:
+                    Log.info("Invalid CTM Method: " + v);
+                    method = CTMMethod.NONE;
+                    break;
             }
         }
         private void getConnect(Properties p) {
             String v = p.getProperty("connect", "none").toLowerCase();
-            if (v.equals("none")) {
-                this.connect = CTMConnect.NONE;
-            }
-            else if (v.equals("block")) {
-                this.connect = CTMConnect.BLOCK;
-            }
-            else if (v.equals("tile")) {
-                this.connect = CTMConnect.TILE;
-            }
-            else if (v.equals("material")) {
-                this.connect = CTMConnect.MATERIAL;
-            }
-            else {
-                Log.info("Invalid CTM Connect: " + v);
-                this.connect = CTMConnect.UNKNOWN;
+            switch (v) {
+                case "none":
+                    this.connect = CTMConnect.NONE;
+                    break;
+                case "block":
+                    this.connect = CTMConnect.BLOCK;
+                    break;
+                case "tile":
+                    this.connect = CTMConnect.TILE;
+                    break;
+                case "material":
+                    this.connect = CTMConnect.MATERIAL;
+                    break;
+                default:
+                    Log.info("Invalid CTM Connect: " + v);
+                    this.connect = CTMConnect.UNKNOWN;
+                    break;
             }
         }
         private void getBiomes(Properties p, CTMTexturePack tp) {
             String v = p.getProperty("biomes", "").trim().toLowerCase();
             if (!v.equals("")) {
-                ArrayList<Integer> ids = new ArrayList<Integer>();
+                ArrayList<Integer> ids = new ArrayList<>();
                 String[] biomenames = tp.biomenames;
                 for(String s : v.split("\\s+")) {
                     for(int i = 0; i < biomenames.length; i++) {
-                        if(s.equals(biomenames[i])) {
+                        if(biomenames[i].equals(s)) {
                             ids.add(i);
                             s = null;
                             break;
@@ -466,18 +481,20 @@ public class CTMTexturePack {
         }
         private void getSymmetry(Properties p) {
             String v = p.getProperty("symmetry", "none").trim().toLowerCase();
-            if (v.equals("none")) {
-                this.symmetry = CTMSymmetry.NONE;
-            }
-            else if (v.equals("opposite")) {
-                this.symmetry = CTMSymmetry.OPPOSITE;
-            }
-            else if (v.equals("all")) {
-                this.symmetry = CTMSymmetry.ALL;
-            }
-            else {
-                Log.info("invalid CTM symmetry: " + v);
-                this.symmetry = CTMSymmetry.NONE;
+            switch (v) {
+                case "none":
+                    this.symmetry = CTMSymmetry.NONE;
+                    break;
+                case "opposite":
+                    this.symmetry = CTMSymmetry.OPPOSITE;
+                    break;
+                case "all":
+                    this.symmetry = CTMSymmetry.ALL;
+                    break;
+                default:
+                    Log.info("invalid CTM symmetry: " + v);
+                    this.symmetry = CTMSymmetry.NONE;
+                    break;
             }
         }
         private void getMatchTiles(Properties p) {
@@ -509,7 +526,7 @@ public class CTMTexturePack {
                 if (v.length() == 0) {
                     return null;
                 }
-                ArrayList<String> lst = new ArrayList<String>();
+                ArrayList<String> lst = new ArrayList<>();
                 String[] tok = tokenize(v, " ,");
                 for (String t : tok) {
                     if (t.indexOf('-') >= 0) {
@@ -699,7 +716,7 @@ public class CTMTexturePack {
             }
             return true;
         }
-        public final boolean exclude(DynmapBlockState block, int face, Context ctx) {
+        private boolean exclude(DynmapBlockState block, int face, Context ctx) {
             if ((faces & (1 << ctx.reorient(face))) == 0) {
                 return true;
             } else if (this.metadata != -1 && block.stateIndex >= 0 && block.stateIndex < 32) {
@@ -901,7 +918,7 @@ public class CTMTexturePack {
      * @param is_rp - if true, resource pack; if false, texture pack
      */
     public CTMTexturePack(TexturePackLoader tpl, TexturePack tp, DynmapCore core, boolean is_rp) {
-        ArrayList<String> files = new ArrayList<String>();
+        ArrayList<String> files = new ArrayList<>();
         this.tpl = tpl;
         biomenames = core.getBiomeNames();
         Set<String> ent = tpl.getEntries();
@@ -921,9 +938,9 @@ public class CTMTexturePack {
                 files.add(name);
             }
         }
-        ctpfiles = files.toArray(new String[files.size()]);
+        ctpfiles = files.toArray(new String[0]);
         Arrays.sort(ctpfiles);
-        processFiles(core);
+        processFiles();
     }
     /**
      * Test if enabled properly
@@ -956,7 +973,7 @@ public class CTMTexturePack {
     /**
      * Process property files
      */
-    private void processFiles(DynmapCore core) {        
+    private void processFiles() {        
         bytilelist = new CTMProps[256][];
         bybaseblockstatelist = new CTMProps[256][];
         mappedtiles = new BitSet();
@@ -1116,7 +1133,7 @@ public class CTMTexturePack {
             idx = (mapiter.getBlockKey() << 8) | laststep.ordinal();
             Integer val = (Integer) cache.get(idx);
             if (val != null) {
-                return val.intValue();
+                return val;
             }
         }
             
@@ -1248,7 +1265,7 @@ public class CTMTexturePack {
                 return mapTextureVerticalHorizontal(p, ctx);
                 
             case FIXED:
-                return mapTextureFixed(p, ctx);
+                return mapTextureFixed(p);
 
             default:
                 return -1;
@@ -1523,7 +1540,7 @@ public class CTMTexturePack {
     }
 
     // Map texture using fixed method
-    private int mapTextureFixed(CTMProps p, Context ctx) {
+    private int mapTextureFixed(CTMProps p) {
         return p.tileIcons[0];
     }
 
@@ -1534,7 +1551,7 @@ public class CTMTexturePack {
     private static final long MULTIPLIER = 0x5deece66dL;
     private static final long ADDEND = 0xbL;
 
-    private static final int getRandom(int x, int y, int z, int face, int modulus)
+    private static int getRandom(int x, int y, int z, int face, int modulus)
     {
         long n = P1 * x * (x + ADDEND) + P2 * y * (y + ADDEND) + P3 * z * (z + ADDEND) + P4 * face * (face + ADDEND);
         n = MULTIPLIER * (n + x + y + z + face) + ADDEND;

@@ -23,7 +23,7 @@ public class TFCWoodRenderer extends CustomRenderer {
     private static final int SIDE_YN = 0x10;
 
     // Meshes, indexed by connection combination (bit 0=X+, bit 1=X-, bit 2=Z+, bit 3=Z-, bit 4=Y-)
-    private RenderPatch[][] meshes = new RenderPatch[32][];
+    private final RenderPatch[][] meshes = new RenderPatch[32][];
     
     @Override
     public boolean initializeRenderer(RenderPatchFactory rpf, String blkname, BitSet blockdatamask, Map<String,String> custparm) {
@@ -48,7 +48,7 @@ public class TFCWoodRenderer extends CustomRenderer {
     }
 
     private void buildMeshes(RenderPatchFactory rpf) {
-        ArrayList<RenderPatch> list = new ArrayList<RenderPatch>();
+        ArrayList<RenderPatch> list = new ArrayList<>();
         for(int dat = 0; dat < 32; dat++) {
             int dat2 = dat;
             if((dat & SIDE_YN) == 0) {  /* Nothing below, always X-Y */
@@ -79,12 +79,12 @@ public class TFCWoodRenderer extends CustomRenderer {
                     addBox(rpf, list, 0.375, 0.625, 0.375, 0.625, 0.0, 1.0);
                     break;
             }
-            meshes[dat] = list.toArray(new RenderPatch[list.size()]);
+            meshes[dat] = list.toArray(new RenderPatch[0]);
             list.clear();
         }
     }
 
-    private static int[][] sides = {
+    private static final int[][] sides = {
         { 1, 0, 0, SIDE_XP },
         { -1, 0, 0, SIDE_XN },
         { 0, 0, 1, SIDE_ZP },
@@ -95,10 +95,10 @@ public class TFCWoodRenderer extends CustomRenderer {
     public RenderPatch[] getRenderPatchList(MapDataContext ctx) {
         /* Build connection map - check each axis */
         int connect = 0;
-        for(int i = 0; i < sides.length; i++) {
-            DynmapBlockState blk = ctx.getBlockTypeAt(sides[i][0], sides[i][1], sides[i][2]);
+        for (int[] side : sides) {
+            DynmapBlockState blk = ctx.getBlockTypeAt(side[0], side[1], side[2]);
             if (blkbs.matchingBaseState(blk)) {
-                connect |= sides[i][3];
+                connect |= side[3];
             }
         }
         DynmapBlockState id = ctx.getBlockTypeAt(0, -1, 0);

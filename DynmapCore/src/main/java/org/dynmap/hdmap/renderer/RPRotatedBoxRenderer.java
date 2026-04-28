@@ -35,12 +35,12 @@ public class RPRotatedBoxRenderer extends CustomRenderer {
         { 3, 2, 4, 5, 1, 0, 187739, 27, 112320 }, 
         { 5, 4, 3, 2, 1, 0, 114011, 110619, 1728 }, 
         { 2, 3, 5, 4, 1, 0, 224603, 27, 112320 } };
-    private int rotalg[] = new int[16]; // Rotaton algorithm (0=orientTextures,1=orientTexturesNew,2=fixed-at-0, 3=rotateTextures)
+    private final int rotalg[] = new int[16]; // Rotaton algorithm (0=orientTextures,1=orientTexturesNew,2=fixed-at-0, 3=rotateTextures)
     // Models for rotation values
     private RenderPatch[][] models;
 
     
-    private String[] tileEntityAttribs = { "rot" };
+    private final String[] tileEntityAttribs = { "rot" };
 
     @Override
     public boolean initializeRenderer(RenderPatchFactory rpf, String blkname, BitSet blockdatamask, Map<String,String> custparm) {

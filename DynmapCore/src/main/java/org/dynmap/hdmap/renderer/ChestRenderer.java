@@ -36,10 +36,10 @@ public class ChestRenderer extends CustomRenderer {
 
         double_chest = !("false".equals(custparm.get("doublechest")));
         		
-        ArrayList<RenderPatch> list = new ArrayList<RenderPatch>();
+        ArrayList<RenderPatch> list = new ArrayList<>();
         // Build single chest patch model 
         CustomRenderer.addBox(rpf, list, OFF1, OFF15, 0, OFF14, OFF1, OFF15, SINGLE_PATCHES);
-        models[ChestData.SINGLE_SOUTH.ordinal()] = list.toArray(new RenderPatch[list.size()]);
+        models[ChestData.SINGLE_SOUTH.ordinal()] = list.toArray(new RenderPatch[0]);
         // Rotate to other orientations
         models[ChestData.SINGLE_EAST.ordinal()] = new RenderPatch[6];
         models[ChestData.SINGLE_NORTH.ordinal()] = new RenderPatch[6];
@@ -53,7 +53,7 @@ public class ChestRenderer extends CustomRenderer {
         	// Build left half model for double chest
         	list.clear();
         	CustomRenderer.addBox(rpf, list, OFF1, 1, 0, OFF14, OFF1, OFF15, LEFT_PATCHES);
-        	models[ChestData.LEFT_SOUTH.ordinal()] = list.toArray(new RenderPatch[list.size()]);
+        	models[ChestData.LEFT_SOUTH.ordinal()] = list.toArray(new RenderPatch[0]);
         	// Rotate to other orientations
         	models[ChestData.LEFT_EAST.ordinal()] = new RenderPatch[6];
         	models[ChestData.LEFT_NORTH.ordinal()] = new RenderPatch[6];
@@ -66,7 +66,7 @@ public class ChestRenderer extends CustomRenderer {
         	// Build right half model for double chest
         	list.clear();
         	CustomRenderer.addBox(rpf, list, 0, OFF15, 0, OFF14, OFF1, OFF15, RIGHT_PATCHES);
-        	models[ChestData.RIGHT_SOUTH.ordinal()] = list.toArray(new RenderPatch[list.size()]);
+        	models[ChestData.RIGHT_SOUTH.ordinal()] = list.toArray(new RenderPatch[0]);
         	// Rotate to other orientations
         	models[ChestData.RIGHT_EAST.ordinal()] = new RenderPatch[6];
         	models[ChestData.RIGHT_NORTH.ordinal()] = new RenderPatch[6];
@@ -98,7 +98,7 @@ public class ChestRenderer extends CustomRenderer {
         	blktype = DynmapBlockState.AIR;	// Force mismatch - always single
         }
         int blkdata = blktype.stateIndex;   /* Get block data */
-        ChestData cd = ChestData.SINGLE_NORTH;   /* Default to single facing north */
+        ChestData cd;
         switch(blkdata) {   /* First, use orientation data */
             case 2: /* North */
                 if(ctx.getBlockTypeAt(-1, 0, 0).baseState == blktype) {

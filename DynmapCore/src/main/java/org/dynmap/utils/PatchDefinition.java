@@ -97,16 +97,21 @@ public class PatchDefinition implements RenderPatch {
      */
     PatchDefinition(PatchDefinition orig, double rotatex, double rotatey, double rotatez, Vector3D rotorigin, int textureindex) {
     	if (rotorigin == null) rotorigin = offsetCenter;
+    	/* Precompute trig once - reused for all three vector rotations */
+    	double sinX = 0, cosX = 1, sinY = 0, cosY = 1, sinZ = 0, cosZ = 1;
+    	if (rotatex != 0) { double r = Math.toRadians(rotatex); sinX = Math.sin(r); cosX = Math.cos(r); }
+    	if (rotatey != 0) { double r = Math.toRadians(rotatey); sinY = Math.sin(r); cosY = Math.cos(r); }
+    	if (rotatez != 0) { double r = Math.toRadians(rotatez); sinZ = Math.sin(r); cosZ = Math.cos(r); }
         Vector3D vec = new Vector3D(orig.x0, orig.y0, orig.z0);
-        rotate(vec, rotatex, rotatey, rotatez, rotorigin); /* Rotate origin */
+        rotatePrecomputed(vec, sinX, cosX, sinY, cosY, sinZ, cosZ, rotorigin); /* Rotate origin */
         x0 = vec.x; y0 = vec.y; z0 = vec.z;
         /* Rotate U */
         vec.x = orig.xu; vec.y = orig.yu; vec.z = orig.zu;
-        rotate(vec, rotatex, rotatey, rotatez, rotorigin); /* Rotate origin */
+        rotatePrecomputed(vec, sinX, cosX, sinY, cosY, sinZ, cosZ, rotorigin);
         xu = vec.x; yu = vec.y; zu = vec.z;
         /* Rotate V */
         vec.x = orig.xv; vec.y = orig.yv; vec.z = orig.zv;
-        rotate(vec, rotatex, rotatey, rotatez, rotorigin); /* Rotate origin */
+        rotatePrecomputed(vec, sinX, cosX, sinY, cosY, sinZ, cosZ, rotorigin);
         xv = vec.x; yv = vec.y; zv = vec.z;
         umin = orig.umin; vmin = orig.vmin;
         umax = orig.umax; vmax = orig.vmax;
@@ -119,27 +124,31 @@ public class PatchDefinition implements RenderPatch {
         v = new Vector3D();
         update();
     }
-    
-    private void rotate(Vector3D vec, double xcnt, double ycnt, double zcnt, Vector3D origin) {
-    	// If no rotation, skip
-    	if ((xcnt == 0) && (ycnt == 0) && (zcnt == 0)) return;
-        vec.subtract(origin); /* Shoft to center of block */
+
+    private static void rotatePrecomputed(Vector3D vec,
+            double sinX, double cosX, double sinY, double cosY, double sinZ, double cosZ,
+            Vector3D origin) {
+    	if (sinX == 0 && sinY == 0 && sinZ == 0) return;
+        vec.subtract(origin);
         /* Do X rotation */
-        double rot = Math.toRadians(xcnt);
-        double nval = vec.z * Math.sin(rot) + vec.y * Math.cos(rot);
-        vec.z = vec.z * Math.cos(rot) - vec.y * Math.sin(rot);
-        vec.y = nval;
+        if (sinX != 0) {
+            double nval = vec.z * sinX + vec.y * cosX;
+            vec.z = vec.z * cosX - vec.y * sinX;
+            vec.y = nval;
+        }
         /* Do Y rotation */
-        rot = Math.toRadians(ycnt);
-        nval = vec.x * Math.cos(rot) - vec.z * Math.sin(rot);
-        vec.z = vec.x * Math.sin(rot) + vec.z * Math.cos(rot);
-        vec.x = nval;
+        if (sinY != 0) {
+            double nval = vec.x * cosY - vec.z * sinY;
+            vec.z = vec.x * sinY + vec.z * cosY;
+            vec.x = nval;
+        }
         /* Do Z rotation */
-        rot = Math.toRadians(zcnt);
-        nval = vec.y * Math.sin(rot) + vec.x * Math.cos(rot);
-        vec.y = vec.y * Math.cos(rot) - vec.x * Math.sin(rot);
-        vec.x = nval;
-        vec.add(origin); /* Shoft back to corner */
+        if (sinZ != 0) {
+            double nval = vec.y * sinZ + vec.x * cosZ;
+            vec.y = vec.y * cosZ - vec.x * sinZ;
+            vec.x = nval;
+        }
+        vec.add(origin);
     }
     public void update(double x0, double y0, double z0, double xu,
             double yu, double zu, double xv, double yv, double zv, double umin,
@@ -171,7 +180,7 @@ public class PatchDefinition implements RenderPatch {
         /* Compute hash code */
         hc = (int)((Double.doubleToLongBits(x0 + xu + xv) >> 32) ^
                 (Double.doubleToLongBits(y0 + yu + yv) >> 34) ^
-                (Double.doubleToLongBits(z0 + yu + yv) >> 36) ^
+                (Double.doubleToLongBits(z0 + zu + zv) >> 36) ^
                 (Double.doubleToLongBits(umin + umax + vmin + vmax + vmaxatumax) >> 38)) ^
                 (sidevis.ordinal() << 8) ^ textureindex;
         /* Now compute normal of surface - U cross V */
@@ -221,30 +230,30 @@ public class PatchDefinition implements RenderPatch {
     }
     public boolean validate() {
         boolean good = true;
-        // Compute visible corners to see if we're inside cube
-        double xx0 = x0 + (xu - x0) * umin + (xv - x0) * vmin;
-        double xx1 = x0 + (xu - x0) * vmin + (xv - x0) * vmax;
-        double xx2 = x0 + (xu - x0) * umax + (xv - x0) * vmin;
-        double xx3 = x0 + (xu - x0) * vmax + (xv - x0) * vmax;;
+        // Compute visible corners to see if we're inside cube (u.x = xu-x0, v.x = xv-x0)
+        double xx0 = x0 + u.x * umin + v.x * vmin;
+        double xx1 = x0 + u.x * vmin + v.x * vmax;
+        double xx2 = x0 + u.x * umax + v.x * vmin;
+        double xx3 = x0 + u.x * vmax + v.x * vmax;
         if (outOfRange(xx0) || outOfRange(xx1) || outOfRange(xx2) || outOfRange(xx3)) {
             Log.verboseinfo(String.format("Invalid visible range xu=[%f:%f], xv=[%f:%f]", xx0, xx2, xx1, xx3));
-            good = false;        	
+            good = false;
         }
-        double yy0 = y0 + (yu - y0) * umin + (yv - y0) * vmin;
-        double yy1 = y0 + (yu - y0) * vmin + (yv - y0) * vmax;
-        double yy2 = y0 + (yu - y0) * umax + (yv - y0) * vmin;
-        double yy3 = y0 + (yu - y0) * vmax + (yv - y0) * vmax;;
+        double yy0 = y0 + u.y * umin + v.y * vmin;
+        double yy1 = y0 + u.y * vmin + v.y * vmax;
+        double yy2 = y0 + u.y * umax + v.y * vmin;
+        double yy3 = y0 + u.y * vmax + v.y * vmax;
         if (outOfRange(yy0) || outOfRange(yy1) || outOfRange(yy2) || outOfRange(yy3)) {
             Log.verboseinfo(String.format("Invalid visible range yu=[%f:%f], yv=[%f:%f]", yy0, yy2, yy1, yy3));
-            good = false;        	
+            good = false;
         }
-        double zz0 = z0 + (zu - z0) * umin + (zv - z0) * vmin;
-        double zz1 = z0 + (zu - z0) * vmin + (zv - z0) * vmax;
-        double zz2 = z0 + (zu - z0) * umax + (zv - z0) * vmin;
-        double zz3 = z0 + (zu - z0) * vmax + (zv - z0) * vmax;
+        double zz0 = z0 + u.z * umin + v.z * vmin;
+        double zz1 = z0 + u.z * vmin + v.z * vmax;
+        double zz2 = z0 + u.z * umax + v.z * vmin;
+        double zz3 = z0 + u.z * vmax + v.z * vmax;
         if (outOfRange(zz0) || outOfRange(zz1) || outOfRange(zz2) || outOfRange(zz3)) {
             Log.verboseinfo(String.format("Invalid visible range zu=[%f:%f], zv=[%f:%f]", zz0, zz2, zz1, zz3));
-            good = false;        	
+            good = false;
         }
         if (!good) {
         	Log.verboseinfo("Bad patch: " + this);

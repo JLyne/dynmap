@@ -10,7 +10,7 @@ import org.dynmap.renderer.RenderPatch;
 import org.dynmap.renderer.RenderPatchFactory;
 
 public class RailCraftTrackRenderer extends CustomRenderer {
-    private String[] tileEntityAttribs = { "trackId" };
+    private final String[] tileEntityAttribs = { "trackId" };
     
     private RenderPatch[][] basepatches;
 

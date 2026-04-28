@@ -26,16 +26,16 @@ public class DoorRenderer extends CustomRenderer {
             return false;
         int[] txt = new int[6];
         for (int combined_meta = 0; combined_meta < 32; combined_meta++) {
-            ArrayList<RenderPatch> list = new ArrayList<RenderPatch>();
+            ArrayList<RenderPatch> list = new ArrayList<>();
             /* Get textures for each side */
             for (int side = 0; side < 6; side++) {
                 txt[side] = sideAndMetaToTexture(combined_meta, side);
             }
-            double[] bounds = getBoundsByMeta(combined_meta);
-            double xmin = bounds[0];
-            double zmin = bounds[1];
-            double xmax = bounds[2];
-            double zmax = bounds[3];
+            double[] boundList = getBoundsByMeta(combined_meta);
+            double xmin = boundList[0];
+            double zmin = boundList[1];
+            double xmax = boundList[2];
+            double zmax = boundList[3];
             /* Add bottom */
             list.add(rpf.getPatch(0, 0, 0, 1, 0, 0, 0, 0, 1, xmin, xmax, zmin, zmax, SideVisible.TOP, txt[0] & 1));
             /* Add top */

@@ -53,7 +53,7 @@ public class PlantRenderer extends CustomRenderer {
     
     @Override
     public RenderPatch[] getRenderPatchList(MapDataContext ctx) {
-        int idx = 0;
+        int idx;
         if (metaFromBelow) {
             idx = ctx.getBlockTypeAt(0, -1, 0).stateIndex;
         }

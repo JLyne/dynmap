@@ -5,8 +5,8 @@ import org.dynmap.ConfigurationNode;
 import org.dynmap.DynmapCore;
 import org.dynmap.DynmapWorld;
 import org.dynmap.MapManager;
-import org.dynmap.utils.LightLevels;
 import org.dynmap.utils.BlockStep;
+import org.dynmap.utils.LightLevels;
 
 public class ShadowHDLighting extends DefaultHDLighting {
 
@@ -45,212 +45,120 @@ public class ShadowHDLighting extends DefaultHDLighting {
         smooth = configuration.getBoolean("smooth-lighting", MapManager.mapman.getSmoothLighting());
     }
     
-    private void    applySmoothLighting(HDPerspectiveState ps, HDShaderState ss, Color incolor, Color[] outcolor, int[] shadowscale) {
+    private void applySmoothLighting(HDPerspectiveState ps, Color incolor, Color[] outcolor, int[] shadowscale) {
         int[] xyz = ps.getSubblockCoord();
         int scale = (int)ps.getScale();
-        int mid = scale/2;
+        int mid = scale / 2;
         BlockStep s1, s2;
         int w1, w2;
-        /* Figure out which directions to look */
+        /* Figure out which two neighbor directions to sample */
         switch(ps.getLastBlockStep()) {
         case X_MINUS:
         case X_PLUS:
-            if(xyz[1] < mid) {
-                s1 = BlockStep.Y_MINUS;
-                w1 = mid - xyz[1];
-            }
-            else {
-                s1 = BlockStep.Y_PLUS;
-                w1 = xyz[1] - mid;
-            }
-            if(xyz[2] < mid) {
-                s2 = BlockStep.Z_MINUS;
-                w2 = mid - xyz[2];
-            }
-            else {
-                s2 = BlockStep.Z_PLUS;
-                w2 = xyz[2] - mid;
-            }
+            s1 = (xyz[1] < mid) ? BlockStep.Y_MINUS : BlockStep.Y_PLUS;
+            w1 = Math.abs(xyz[1] - mid);
+            s2 = (xyz[2] < mid) ? BlockStep.Z_MINUS : BlockStep.Z_PLUS;
+            w2 = Math.abs(xyz[2] - mid);
             break;
         case Z_MINUS:
         case Z_PLUS:
-            if(xyz[0] < mid) {
-                s1 = BlockStep.X_MINUS;
-                w1 = mid - xyz[0];
-            }
-            else {
-                s1 = BlockStep.X_PLUS;
-                w1 = xyz[0] - mid;
-            }
-            if(xyz[1] < mid) {
-                s2 = BlockStep.Y_MINUS;
-                w2 = mid - xyz[1];
-            }
-            else {
-                s2 = BlockStep.Y_PLUS;
-                w2 = xyz[1] - mid;
-            }
+            s1 = (xyz[0] < mid) ? BlockStep.X_MINUS : BlockStep.X_PLUS;
+            w1 = Math.abs(xyz[0] - mid);
+            s2 = (xyz[1] < mid) ? BlockStep.Y_MINUS : BlockStep.Y_PLUS;
+            w2 = Math.abs(xyz[1] - mid);
             break;
         default:
-            if(xyz[0] < mid) {
-                s1 = BlockStep.X_MINUS;
-                w1 = mid - xyz[0];
-            }
-            else {
-                s1 = BlockStep.X_PLUS;
-                w1 = xyz[0] - mid;
-            }
-            if(xyz[2] < mid) {
-                s2 = BlockStep.Z_MINUS;
-                w2 = mid - xyz[2];
-            }
-            else {
-                s2 = BlockStep.Z_PLUS;
-                w2 = xyz[2] - mid;
-            }
+            s1 = (xyz[0] < mid) ? BlockStep.X_MINUS : BlockStep.X_PLUS;
+            w1 = Math.abs(xyz[0] - mid);
+            s2 = (xyz[2] < mid) ? BlockStep.Z_MINUS : BlockStep.Z_PLUS;
+            w2 = Math.abs(xyz[2] - mid);
             break;
         }
-        /* Now get the 3 needed light levels */
-        LightLevels skyemit0 = ps.getCachedLightLevels(0);
-        ps.getLightLevels(skyemit0);
-        LightLevels skyemit1 = ps.getCachedLightLevels(1);
-        ps.getLightLevelsAtStep(s1, skyemit1);
-        LightLevels skyemit2 = ps.getCachedLightLevels(2);
-        ps.getLightLevelsAtStep(s2, skyemit2);
+        /* Fetch the 3 needed light levels (once, shared by both night and day passes) */
+        LightLevels ll0 = ps.getCachedLightLevels(0);
+        ps.getLightLevels(ll0);
+        LightLevels ll1 = ps.getCachedLightLevels(1);
+        ps.getLightLevelsAtStep(s1, ll1);
+        LightLevels ll2 = ps.getCachedLightLevels(2);
+        ps.getLightLevelsAtStep(s2, ll2);
 
-        /* Get light levels */
-        int ll0 = getLightLevel(skyemit0, true);
-        int ll1 = getLightLevel(skyemit1, true);
-        int weight = 0;
-        if(ll1 < ll0)
-            weight -= w1;
-        else if(ll1 > ll0)
-            weight += w1;
-        int ll2 = getLightLevel(skyemit2, true);
-        if(ll2 < ll0)
-            weight -= w2;
-        else if(ll2 > ll0)
-            weight += w2;
-        outcolor[0].setColor(incolor);
-        int cscale = 256;
-        if(weight == 0) {
-            cscale = shadowscale[ll0];
-        }
-        else if(weight < 0) {   /* If negative, interpolate down */
-            weight = -weight;
-            if(ll0 > 0) {
-                cscale = (shadowscale[ll0] * (scale-weight) + shadowscale[ll0-1] * weight)/scale;
-            }
-            else {
-                cscale = shadowscale[ll0];
-            }
-        }
-        else {
-            if(ll0 < 15) {
-                cscale = (shadowscale[ll0] * (scale-weight) + shadowscale[ll0+1] * weight)/scale;
-            }
-            else {
-                cscale = shadowscale[ll0];
-            }
-        }
-        if(cscale < 256) {
-            Color c = outcolor[0];
-            c.setRGBA((c.getRed() * cscale) >> 8, (c.getGreen() * cscale) >> 8, 
-                (c.getBlue() * cscale) >> 8, c.getAlpha());
-        }
+        /* Night (ambient) pass */
+        applySmoothedLightToColor(outcolor[0], incolor, ll0, ll1, ll2, true, w1, w2, scale, shadowscale);
+        /* Day pass (only when night/day rendering is active) */
         if(outcolor.length > 1) {
-            ll0 = getLightLevel(skyemit0, false);
-            ll1 = getLightLevel(skyemit1, false);
-            weight = 0;
-            if(ll1 < ll0)
-                weight -= w1;
-            else if(ll1 > ll0)
-                weight += w1;
-            ll2 = getLightLevel(skyemit2, false);
-            if(ll2 < ll0)
-                weight -= w2;
-            else if(ll2 > ll0)
-                weight += w2;
-            outcolor[1].setColor(incolor);
-            cscale = 256;
-            if(weight == 0) {
-                cscale = shadowscale[ll0];
-            }
-            else if(weight < 0) {   /* If negative, interpolate down */
-                weight = -weight;
-                if(ll0 > 0) {
-                    cscale = (shadowscale[ll0] * (scale-weight) + shadowscale[ll0-1] * weight)/scale;
-                }
-                else {
-                    cscale = shadowscale[ll0];
-                }
-            }
-            else {
-                if(ll0 < 15) {
-                    cscale = (shadowscale[ll0] * (scale-weight) + shadowscale[ll0+1] * weight)/scale;
-                }
-                else {
-                    cscale = shadowscale[ll0];
-                }
-            }
-            if(cscale < 256) {
-                Color c = outcolor[1];
-                c.setRGBA((c.getRed() * cscale) >> 8, (c.getGreen() * cscale) >> 8, 
-                    (c.getBlue() * cscale) >> 8, c.getAlpha());
-            }
+            applySmoothedLightToColor(outcolor[1], incolor, ll0, ll1, ll2, false, w1, w2, scale, shadowscale);
         }
     }
-    
-    private final int getLightLevel(final LightLevels ll, boolean useambient) {
-        int lightlevel;
-        /* If ambient light, adjust base lighting for it */
-        if(useambient)
-            lightlevel = lightscale[ll.sky];
-        else
-            lightlevel = ll.sky;
-        /* If we're below max, see if emitted light helps */
+
+    /** Apply smooth lighting to a single output color for one pass (ambient or day). */
+    private void applySmoothedLightToColor(Color out, Color incolor,
+            LightLevels ll0, LightLevels ll1, LightLevels ll2,
+            boolean useambient, int w1, int w2, int scale, int[] shadowscale) {
+        int lv0 = getLightLevel(ll0, useambient);
+        int lv1 = getLightLevel(ll1, useambient);
+        int weight = 0;
+        if(lv1 < lv0) weight -= w1;
+        else if(lv1 > lv0) weight += w1;
+        int lv2 = getLightLevel(ll2, useambient);
+        if(lv2 < lv0) weight -= w2;
+        else if(lv2 > lv0) weight += w2;
+        out.setColor(incolor);
+        int cscale = computeSmoothedCscale(lv0, weight, scale, shadowscale);
+        if(cscale < 256) {
+            out.scaleRGB(cscale);
+        }
+    }
+
+    /** Interpolate the shadow scale for a light level, blending toward the adjacent level by weight/scale. */
+    private int computeSmoothedCscale(int ll0, int weight, int scale, int[] shadowscale) {
+        if(weight == 0) {
+            return shadowscale[ll0];
+        }
+        if(weight < 0) {
+            weight = -weight;
+            return (ll0 > 0)
+                ? (shadowscale[ll0] * (scale - weight) + shadowscale[ll0 - 1] * weight) / scale
+                : shadowscale[ll0];
+        }
+        return (ll0 < 15)
+            ? (shadowscale[ll0] * (scale - weight) + shadowscale[ll0 + 1] * weight) / scale
+            : shadowscale[ll0];
+    }
+
+    private int getLightLevel(final LightLevels ll, boolean useambient) {
+        int lightlevel = useambient ? lightscale[ll.sky] : ll.sky;
         if(lightlevel < 15) {
-            lightlevel = Math.max(ll.emitted, lightlevel);                                
+            lightlevel = Math.max(ll.emitted, lightlevel);
         }
         return lightlevel;
     }
-        
+
     /* Apply lighting to given pixel colors (1 outcolor if normal, 2 if night/day) */
-    public void    applyLighting(HDPerspectiveState ps, HDShaderState ss, Color incolor, Color[] outcolor) {
-    	int[] shadowscale = null;
-        if (smooth && ps.getShade()) {
-            shadowscale = ss.getLightingTable();
-            if (shadowscale == null) {
-                shadowscale = defLightingTable;
-            }
-            applySmoothLighting(ps, ss, incolor, outcolor, shadowscale);
+    @Override
+    public void applyLighting(HDPerspectiveState ps, HDShaderState ss, Color incolor, Color[] outcolor) {
+        int[] shadowscale = ss.getLightingTable();
+        if(shadowscale == null) {
+            shadowscale = defLightingTable;
+        }
+        if(smooth && ps.getShade()) {
+            applySmoothLighting(ps, incolor, outcolor, shadowscale);
             checkGrayscale(outcolor);
             return;
         }
-        LightLevels ll = null;
-        int lightlevel = 15, lightlevel_day = 15;
-        /* If processing for shadows, use sky light level as base lighting */
-        if(defLightingTable != null) {
-            shadowscale = ss.getLightingTable();
-            if (shadowscale == null) {
-                shadowscale = defLightingTable;
-            }
-            ll = ps.getCachedLightLevels(0);
-            ps.getLightLevels(ll);
-            lightlevel = lightlevel_day = ll.sky;
-        }
-        /* If ambient light, adjust base lighting for it */
-        lightlevel = lightscale[lightlevel];
-        /* If we're below max, see if emitted light helps */
+        /* Non-smooth: fetch light levels and apply flat shadow */
+        LightLevels ll = ps.getCachedLightLevels(0);
+        ps.getLightLevels(ll);
+        int lightlevel = lightscale[ll.sky];   // apply ambient scale immediately
+        int lightlevel_day = ll.sky;
         if((lightlevel < 15) || (lightlevel_day < 15)) {
             int emitted = ll.emitted;
-            lightlevel = Math.max(emitted, lightlevel);                                
-            lightlevel_day = Math.max(emitted, lightlevel_day);                                
+            lightlevel     = Math.max(emitted, lightlevel);
+            lightlevel_day = Math.max(emitted, lightlevel_day);
         }
-        /* Figure out our color, with lighting if needed */
         outcolor[0].setColor(incolor);
         if(lightlevel < 15) {
-            shadowColor(outcolor[0], lightlevel, shadowscale);
+            int s = shadowscale[lightlevel];
+            if(s < 256) outcolor[0].scaleRGB(s);
         }
         if(outcolor.length > 1) {
             if(lightlevel_day == lightlevel) {
@@ -259,28 +167,25 @@ public class ShadowHDLighting extends DefaultHDLighting {
             else {
                 outcolor[1].setColor(incolor);
                 if(lightlevel_day < 15) {
-                    shadowColor(outcolor[1], lightlevel_day, shadowscale);
+                    int s = shadowscale[lightlevel_day];
+                    if(s < 256) outcolor[1].scaleRGB(s);
                 }
             }
         }
         checkGrayscale(outcolor);
     }
 
-    private final void shadowColor(Color c, int lightlevel, int[] shadowscale) {
-        int scale = shadowscale[lightlevel];
-        if(scale < 256)
-            c.setRGBA((c.getRed() * scale) >> 8, (c.getGreen() * scale) >> 8, 
-                (c.getBlue() * scale) >> 8, c.getAlpha());
-    }
-
 
     /* Test if night/day is enabled for this renderer */
+    @Override
     public boolean isNightAndDayEnabled() { return night_and_day; }
     
     /* Test if sky light level needed */
+    @Override
     public boolean isSkyLightLevelNeeded() { return true; }
     
     /* Test if emitted light level needed */
+    @Override
     public boolean isEmittedLightLevelNeeded() { return true; }    
 
     @Override

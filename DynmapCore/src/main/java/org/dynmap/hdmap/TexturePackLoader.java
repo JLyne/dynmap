@@ -19,14 +19,14 @@ import org.dynmap.common.DynmapServerInterface;
 public class TexturePackLoader {
     private ZipFile zf;
     private File tpdir;
-    private DynmapServerInterface dsi;
+    private final DynmapServerInterface dsi;
     private static final String RESOURCEPATH = "texturepacks/standard";
     
     private static class ModSource {
         ZipFile zf;
         File directory;
     }
-    private HashMap<String, ModSource> src_by_mod = new HashMap<String, ModSource>();
+    private HashMap<String, ModSource> src_by_mod = new HashMap<>();
     
     public TexturePackLoader(File tp, DynmapCore core) {        
         if (tp.isFile() && tp.canRead()) {
@@ -141,7 +141,7 @@ public class TexturePackLoader {
         }
     }
     public Set<String> getEntries() {
-        HashSet<String> rslt = new HashSet<String>();
+        HashSet<String> rslt = new HashSet<>();
         if (zf != null) {
             Enumeration<? extends ZipEntry> lst = zf.entries();
             while(lst.hasMoreElements()) {

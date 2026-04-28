@@ -29,14 +29,14 @@ public class FluidStateRenderer extends CustomRenderer {
     
     private static DynIntHashMap fullculledcache = null;
     
-    private static final void init(RenderPatchFactory rpf) {
-        ArrayList<RenderPatch> list = new ArrayList<RenderPatch>();
+    private static void init(RenderPatchFactory rpf) {
+        ArrayList<RenderPatch> list = new ArrayList<>();
         // Create meshes for flat topped blocks
     	meshcache = new DynIntHashMap();
         for (int i = 0; i < 10; i++) {
             list.clear();
             CustomRenderer.addBox(rpf, list, 0.0, 1.0, 0.0, 1.0 - (i / 9.0), 0.0, 1.0, still_patches);
-            putCachedModel(9 - i, 9 - i, 9 - i, 9 - i, list.toArray(new RenderPatch[list.size()]));
+            putCachedModel(9 - i, 9 - i, 9 - i, 9 - i, list.toArray(new RenderPatch[0]));
         }
     	bottom = rpf.getPatch(0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 1, 0, 1, SideVisible.TOP, PATCH_STILL);
         // For full height, build culled cache - eliminate surfaces adjacent to other fluid blocks
@@ -49,7 +49,7 @@ public class FluidStateRenderer extends CustomRenderer {
         			list.add(fullblkmodel[f]);
         		}
         	}
-        	fullculledcache.put(i, list.toArray(new RenderPatch[list.size()]));
+        	fullculledcache.put(i, list.toArray(new RenderPatch[0]));
         }
     }
     @Override
@@ -68,7 +68,7 @@ public class FluidStateRenderer extends CustomRenderer {
         return 2;
     }
 
-    private static final DynmapBlockState getFluidState(MapDataContext ctx, int dx, int dy, int dz) {
+    private static DynmapBlockState getFluidState(MapDataContext ctx, int dx, int dy, int dz) {
     	DynmapBlockState bs;
     	if ((dx == 0) && (dy == 0) && (dz == 0)) {
     		bs = ctx.getBlockType();
@@ -81,12 +81,12 @@ public class FluidStateRenderer extends CustomRenderer {
     }
     
     // Height of air, in ninths
-    private static final int getAirHeight(DynmapBlockState bs) {
+    private static int getAirHeight(DynmapBlockState bs) {
     	int idx = bs.stateIndex;
     	return (idx > 7) ? 1 : (idx + 1);
     }
     
-    private static final int getIntKey(int h_1_1, int h_n1_1, int h_1_n1, int h_n1_n1) {
+    private static int getIntKey(int h_1_1, int h_n1_1, int h_1_n1, int h_n1_n1) {
     	return (h_1_1) + (h_n1_1 << 4) + (h_1_n1 << 8) + (h_n1_n1 << 12);
     }
 
@@ -101,7 +101,7 @@ public class FluidStateRenderer extends CustomRenderer {
     }
 
     // Get culled full model
-    private static final RenderPatch[]  getFullCulledModel(MapDataContext ctx, DynmapBlockState bs_0_0_0, DynmapBlockState bs_0_1_0) {
+    private static RenderPatch[]  getFullCulledModel(MapDataContext ctx, DynmapBlockState bs_0_0_0, DynmapBlockState bs_0_1_0) {
     	DynmapBlockState bs_n1_0_0 = getFluidState(ctx, -1, 0, 0);
     	DynmapBlockState bs_1_0_0 = getFluidState(ctx, 1, 0, 0);
     	DynmapBlockState bs_0_0_n1 = getFluidState(ctx, 0, 0, -1);
@@ -109,7 +109,7 @@ public class FluidStateRenderer extends CustomRenderer {
     	return getFullCulledModel(ctx, bs_0_0_0, bs_0_1_0, bs_n1_0_0, bs_1_0_0, bs_0_0_n1, bs_0_0_1);
     }
     // Get culled full model
-    private static final RenderPatch[]  getFullCulledModel(MapDataContext ctx, DynmapBlockState bs_0_0_0, 
+    private static RenderPatch[]  getFullCulledModel(MapDataContext ctx, DynmapBlockState bs_0_0_0, 
     		DynmapBlockState bs_0_1_0, DynmapBlockState bs_n1_0_0, DynmapBlockState bs_1_0_0,
     		 DynmapBlockState bs_0_0_n1, DynmapBlockState bs_0_0_1) {
     	int idx = 0;
@@ -141,13 +141,13 @@ public class FluidStateRenderer extends CustomRenderer {
     }
 
     // Check if full height corner due to upper block states
-    private static final boolean isUpperCornerHeightFull(DynmapBlockState b0, DynmapBlockState u0, DynmapBlockState u1, DynmapBlockState u2, DynmapBlockState u3) {
+    private static boolean isUpperCornerHeightFull(DynmapBlockState b0, DynmapBlockState u0, DynmapBlockState u1, DynmapBlockState u2, DynmapBlockState u3) {
     	// If any above blocks are match, return full height
     	return (b0.matchingBaseState(u0) || b0.matchingBaseState(u1) || b0.matchingBaseState(u2) || b0.matchingBaseState(u3));
     }
     
     // Return height in ninths (round to nearest - 0-9)
-    private static final int getCornerHeight(DynmapBlockState b0, DynmapBlockState b1, DynmapBlockState b2, DynmapBlockState b3) {
+    private static int getCornerHeight(DynmapBlockState b0, DynmapBlockState b1, DynmapBlockState b2, DynmapBlockState b3) {
     	int accum = 0;
     	int cnt = 0;
     	// Check each of 4 neighbors
@@ -260,7 +260,7 @@ public class FluidStateRenderer extends CustomRenderer {
     	// If not found, create model
     	if (mod == null) {
         	RenderPatchFactory rpf = ctx.getPatchFactory();
-			ArrayList<RenderPatch> list = new ArrayList<RenderPatch>();
+			ArrayList<RenderPatch> list = new ArrayList<>();
 			list.add(bottom);	// All models have bottom patch
 			// Add side for each face
 			addSide(list, rpf, 0, 0, 0, 1, bh_n1_n1, bh_n1_1); // Xminus
@@ -286,7 +286,7 @@ public class FluidStateRenderer extends CustomRenderer {
 			else {	// bh_1_n1 and bh_n1_n1 (zMinus)
 				addTop(list, rpf, 1, 0, 0, 0, bh_1_n1, bh_n1_n1, bh_1_1, bh_n1_1);
 			}
-			mod = list.toArray(new RenderPatch[list.size()]);
+			mod = list.toArray(new RenderPatch[0]);
 	    	putCachedModel(bh_1_1, bh_n1_1, bh_1_n1, bh_n1_n1, mod);
 	    	
 	    	//Log.info(String.format("%d:%d:%d::bh_1_1=%d,bh_1_n1=%d,bh_n1_1=%d,bh_n1_n1=%d", ctx.getX(), ctx.getY(), ctx.getZ(), bh_1_1, bh_1_n1, bh_n1_1, bh_n1_n1));
@@ -297,13 +297,13 @@ public class FluidStateRenderer extends CustomRenderer {
     	return mod;
     }
     
-    private static final void addSide(ArrayList<RenderPatch> list, RenderPatchFactory rpf, double x0, double z0, double x1, double z1, int h0, int h1) {
+    private static void addSide(ArrayList<RenderPatch> list, RenderPatchFactory rpf, double x0, double z0, double x1, double z1, int h0, int h1) {
     	if ((h0 == 0) && (h1 == 0))
     		return;
     	list.add(rpf.getPatch(x0, 0, z0, x1, 0, z1, x0, 1, z0, 0, 1, 0, 0, (double) h0 / 9.0, (double) h1 / 9.0, SideVisible.TOP, PATCH_FLOWING));
     }
     
-    private static final void addTop(ArrayList<RenderPatch> list, RenderPatchFactory rpf, double x0, double z0, double x1, double z1, int h0, int h1, int h2, int h3) {
+    private static void addTop(ArrayList<RenderPatch> list, RenderPatchFactory rpf, double x0, double z0, double x1, double z1, int h0, int h1, int h2, int h3) {
     	int h0_upper = h1 + h2 - h3;
     	if (x0 == x1) {	// edge is Z+/-
     		if (h0_upper == h0) {	// If single surface

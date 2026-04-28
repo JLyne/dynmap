@@ -1,9 +1,5 @@
 package org.dynmap.hdmap;
 
-import static org.dynmap.JSONUtils.s;
-
-import org.dynmap.DynmapWorld;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -14,11 +10,14 @@ import org.dynmap.Color;
 import org.dynmap.ConfigurationNode;
 import org.dynmap.DynmapChunk;
 import org.dynmap.DynmapCore;
+import org.dynmap.DynmapWorld;
+import static org.dynmap.JSONUtils.s;
 import org.dynmap.Log;
 import org.dynmap.MapManager;
 import org.dynmap.MapTile;
 import org.dynmap.MapType;
 import org.dynmap.MapTypeState;
+import org.dynmap.hdmap.TexturePack.BlockTransparency;
 import org.dynmap.markers.impl.MarkerAPIImpl;
 import org.dynmap.renderer.DynmapBlockState;
 import org.dynmap.renderer.RenderPatch;
@@ -26,10 +25,9 @@ import org.dynmap.renderer.RenderPatchFactory.SideVisible;
 import org.dynmap.storage.MapStorage;
 import org.dynmap.storage.MapStorageTile;
 import org.dynmap.utils.BlockStep;
-import org.dynmap.hdmap.TexturePack.BlockTransparency;
+import org.dynmap.utils.DynLongHashMap;
 import org.dynmap.utils.DynmapBufferedImage;
 import org.dynmap.utils.LightLevels;
-import org.dynmap.utils.DynLongHashMap;
 import org.dynmap.utils.MapChunkCache;
 import org.dynmap.utils.MapIterator;
 import org.dynmap.utils.Matrix3D;
@@ -70,8 +68,8 @@ public class IsoHDPerspective implements HDPerspective {
     public static final int MAX_SCALE = 64;
     public static final int MIN_SCALE = 1;
     
-    private boolean need_biomedata = false;
-    private boolean need_rawbiomedata = false;
+    private final boolean need_biomedata = false;
+    private final boolean need_rawbiomedata = false;
 
     private static final BlockStep [] semi_steps = { BlockStep.Y_PLUS, BlockStep.X_MINUS, BlockStep.X_PLUS, BlockStep.Z_MINUS, BlockStep.Z_PLUS };
     
@@ -90,6 +88,7 @@ public class IsoHDPerspective implements HDPerspective {
         /* Scaled models for non-cube blocks */
         private final HDScaledBlockModels scalemodels;
         private final int modscale;
+        private final int modscale2; /* modscale * modscale, precomputed for raytraceSubblock */
 
         /* Section-level raytrace variables */
         int sx, sy, sz;
@@ -105,7 +104,7 @@ public class IsoHDPerspective implements HDPerspective {
         boolean nonairhit;
         /* Subblock tracer state */
         int mx, my, mz;
-        double xx, yy, zz;
+        //double xx, yy, zz;
         double mdt_dx;
         double mdt_dy;
         double mdt_dz;
@@ -115,6 +114,10 @@ public class IsoHDPerspective implements HDPerspective {
         double mt;
         double mtend;
         int mxout, myout, mzout;
+        /* Incremental subblock index: midx = modscale2*my + modscale*mz + mx, updated each step */
+        int midx;
+        int mstep_y;    // y_inc * modscale2 — midx delta per my step
+        int mstep_z;    // z_inc * modscale  — midx delta per mz step
         /* Patch state and work variables */
         Vector3D v0 = new Vector3D();
         Vector3D vS = new Vector3D();
@@ -153,23 +156,24 @@ public class IsoHDPerspective implements HDPerspective {
             custom_meshes = new DynLongHashMap(4096);
             custom_fluid_meshes = new DynLongHashMap(4096);
             modscale = basemodscale << scaled;
+            modscale2 = modscale * modscale;
             scalemodels = HDBlockModels.getModelsForScale(basemodscale << scaled);
         }
         
-        private final void updateSemitransparentLight(LightLevels ll) {
+        private void updateSemitransparentLight(LightLevels ll) {
         	int emitted = 0, sky = 0;
-        	for(int i = 0; i < semi_steps.length; i++) {
-        		int emit_sky_light = mapiter.getBlockLight(semi_steps[i]);
-        		if ((emit_sky_light >> 8) > emitted) emitted = (emit_sky_light >> 8);
-        		if ((emit_sky_light & 0xF) > sky) sky = (emit_sky_light & 0xF);
-        	}
+            for (BlockStep semi_step : semi_steps) {
+                int emit_sky_light = mapiter.getBlockLight(semi_step);
+                if ((emit_sky_light >> 8) > emitted) emitted = (emit_sky_light >> 8);
+                if ((emit_sky_light & 0xF) > sky) sky = (emit_sky_light & 0xF);
+            }
         	ll.sky = sky;
         	ll.emitted = emitted;
         }
         /**
          * Update sky and emitted light 
          */
-        private final void updateLightLevel(DynmapBlockState blk, LightLevels ll) {
+        private void updateLightLevel(DynmapBlockState blk, LightLevels ll) {
             /* Look up transparency for current block */
             BlockTransparency bt = HDBlockStateTextureMap.getTransparency(blk);
             switch(bt) {
@@ -250,18 +254,22 @@ public class IsoHDPerspective implements HDPerspective {
         /**
          * Get pixel X coordinate
          */
+        @Override
         public final int getPixelX() { return px; }
         /**
          * Get pixel Y coordinate
          */
+        @Override
         public final int getPixelY() { return py; }
         /**
          * Get map iterator
          */
+        @Override
         public final MapIterator getMapIterator() { return mapiter; }
         /**
          * Return submodel alpha value (-1 if no submodel rendered)
          */
+        @Override
         public int getSubmodelAlpha() {
             return subalpha;
         }
@@ -283,9 +291,9 @@ public class IsoHDPerspective implements HDPerspective {
             n = 1;
 
             /* Initial section coord */
-            sx = fastFloor(top.x/16.0);
-            sy = fastFloor(top.y/16.0);
-            sz = fastFloor(top.z/16.0);
+            sx = fastFloor(top.x * 0.0625);
+            sy = fastFloor(top.y * 0.0625);
+            sz = fastFloor(top.z * 0.0625);
             /* Compute parametric step (dt) per step on each axis */
             sdt_dx = 16.0 / dx;
             sdt_dy = 16.0 / dy;
@@ -302,7 +310,7 @@ public class IsoHDPerspective implements HDPerspective {
             else if (bottom.x > top.x) {
                 x_inc = 1;
                 n += fastFloor(bottom.x) - x;
-                st_next_x = (fastFloor(top.x/16.0) + 1 - (top.x/16.0)) * sdt_dx;
+                st_next_x = (fastFloor(top.x * 0.0625) + 1 - (top.x * 0.0625)) * sdt_dx;
                 stepx = BlockStep.X_PLUS;
                 mxout = modscale;
             }
@@ -310,7 +318,7 @@ public class IsoHDPerspective implements HDPerspective {
             else {
                 x_inc = -1;
                 n += x - fastFloor(bottom.x);
-                st_next_x = ((top.x/16.0) - fastFloor(top.x/16.0)) * sdt_dx;
+                st_next_x = ((top.x * 0.0625) - fastFloor(top.x * 0.0625)) * sdt_dx;
                 stepx = BlockStep.X_MINUS;
                 mxout = -1;
             }
@@ -325,7 +333,7 @@ public class IsoHDPerspective implements HDPerspective {
             else if (bottom.y > top.y) {
                 y_inc = 1;
                 n += fastFloor(bottom.y) - y;
-                st_next_y = (fastFloor(top.y/16.0) + 1 - (top.y/16.0)) * sdt_dy;
+                st_next_y = (fastFloor(top.y * 0.0625) + 1 - (top.y * 0.0625)) * sdt_dy;
                 stepy = BlockStep.Y_PLUS;
                 myout = modscale;
             }
@@ -333,7 +341,7 @@ public class IsoHDPerspective implements HDPerspective {
             else {
                 y_inc = -1;
                 n += y - fastFloor(bottom.y);
-                st_next_y = ((top.y/16.0) - fastFloor(top.y/16.0)) * sdt_dy;
+                st_next_y = ((top.y * 0.0625) - fastFloor(top.y * 0.0625)) * sdt_dy;
                 stepy = BlockStep.Y_MINUS;
                 myout = -1;
             }
@@ -348,7 +356,7 @@ public class IsoHDPerspective implements HDPerspective {
             else if (bottom.z > top.z) {
                 z_inc = 1;
                 n += fastFloor(bottom.z) - z;
-                st_next_z = (fastFloor(top.z/16.0) + 1 - (top.z/16.0)) * sdt_dz;
+                st_next_z = (fastFloor(top.z * 0.0625) + 1 - (top.z * 0.0625)) * sdt_dz;
                 stepz = BlockStep.Z_PLUS;
                 mzout = modscale;
             }
@@ -356,7 +364,7 @@ public class IsoHDPerspective implements HDPerspective {
             else {
                 z_inc = -1;
                 n += z - fastFloor(bottom.z);
-                st_next_z = ((top.z/16.0) - fastFloor(top.z/16.0)) * sdt_dz;
+                st_next_z = ((top.z * 0.0625) - fastFloor(top.z * 0.0625)) * sdt_dz;
                 stepz = BlockStep.Z_MINUS;
                 mzout = -1;
             }
@@ -366,7 +374,7 @@ public class IsoHDPerspective implements HDPerspective {
             skiptoair = isnether;
         }
 
-        private final boolean handleSubModel(short[] model, HDShaderState[] shaderstate, boolean[] shaderdone) {
+        private boolean handleSubModel(short[] model, HDShaderState[] shaderstate, boolean[] shaderdone) {
             boolean firststep = true;
             
             while(!raytraceSubblock(model, firststep)) {
@@ -391,7 +399,7 @@ public class IsoHDPerspective implements HDPerspective {
             return false;
         }
         
-        private final int handlePatch(PatchDefinition pd, int hitcnt) {
+        private int handlePatch(PatchDefinition pd, int hitcnt) {
             /* Compute origin of patch */
             v0.x = (double)x + pd.x0;
             v0.y = (double)y + pd.y0;
@@ -445,24 +453,30 @@ public class IsoHDPerspective implements HDPerspective {
                 return hitcnt;
             }
             /* Compute parametric value of intercept */
-            double t = inv_det * pd.v.innerProduct(vS);
-            if (t > 0.000001) { /* We've got a hit */
-                patch_t[hitcnt] = t;
+            double tt = inv_det * pd.v.innerProduct(vS);
+            if (tt > 0.000001) { /* We've got a hit */
+                patch_t[hitcnt] = tt;
                 patch_u[hitcnt] = u;
                 patch_v[hitcnt] = v;
                 patch_shade[hitcnt] = pd.shade;
                 patch_id[hitcnt] = pd.textureindex;
                 if(det > 0) {
                     patch_step[hitcnt] = pd.step.opposite();
-                    if (pd.sidevis == SideVisible.TOPFLIP) {
-                        patch_u[hitcnt] = 1 - u;
-                    }
-                    else if (pd.sidevis == SideVisible.TOPFLIPV) {
-                        patch_v[hitcnt] = 1 - v;                    	
-                    }
-                    else if (pd.sidevis == SideVisible.TOPFLIPHV) {
-                        patch_u[hitcnt] = 1 - u;
-                        patch_v[hitcnt] = 1 - v;                    	
+                    if (null != pd.sidevis) {
+                        switch (pd.sidevis) {
+                            case TOPFLIP:
+                                patch_u[hitcnt] = 1 - u;
+                                break;
+                            case TOPFLIPV:
+                                patch_v[hitcnt] = 1 - v;
+                                break;
+                            case TOPFLIPHV:
+                                patch_u[hitcnt] = 1 - u;                    	
+                                patch_v[hitcnt] = 1 - v;
+                                break;
+                            default:
+                                break;
+                        }
                     }
                 }
                 else {
@@ -476,17 +490,17 @@ public class IsoHDPerspective implements HDPerspective {
             return hitcnt;
         }
         
-        private final boolean handlePatches(RenderPatch[] patches, HDShaderState[] shaderstate, boolean[] shaderdone, DynmapBlockState fluidstate, RenderPatch[] fluidpatches) {
+        private boolean handlePatches(RenderPatch[] patches, HDShaderState[] shaderstate, boolean[] shaderdone, DynmapBlockState fluidstate, RenderPatch[] fluidpatches) {
             int hitcnt = 0;
             int water_hit = Integer.MAX_VALUE; // hit index of first water hit
             /* Loop through patches : compute intercept values for each */
-            for(int i = 0; i < patches.length; i++) {
-                hitcnt = handlePatch((PatchDefinition)patches[i], hitcnt);
+            for (RenderPatch patche : patches) {
+                hitcnt = handlePatch((PatchDefinition) patche, hitcnt);
             }
             if ((fluidpatches != null) && (fluidpatches.length > 0)) {
                 int prev_hitcnt = hitcnt;
-                for(int i = 0; i < fluidpatches.length; i++) {
-                    hitcnt = handlePatch((PatchDefinition)fluidpatches[i], hitcnt);
+                for (RenderPatch fp : fluidpatches) {
+                    hitcnt = handlePatch((PatchDefinition)fp, hitcnt);
                 }
                 if (prev_hitcnt < hitcnt) { // At least one water hit?
                     water_hit = prev_hitcnt;    // Remember index
@@ -592,7 +606,7 @@ public class IsoHDPerspective implements HDPerspective {
         /**
          * Process visit of ray to block
          */
-        private final boolean visit_block(HDShaderState[] shaderstate, boolean[] shaderdone) {
+        private boolean visit_block(HDShaderState[] shaderstate, boolean[] shaderdone) {
             lastblocktype = blocktype;
             blocktype = mapiter.getBlockType();
             if (skiptoair) {	/* If skipping until we see air */
@@ -636,7 +650,7 @@ public class IsoHDPerspective implements HDPerspective {
         }
         
         /* Skip empty : return false if exited */
-        private final boolean raytraceSkipEmpty(MapChunkCache cache) {
+        private boolean raytraceSkipEmpty(MapChunkCache cache) {
         	int minsy = cache.getWorld().minY >> 4;
             while(cache.isEmptySection(sx, sy, sz)) {
                 /* If Y step is next best */
@@ -669,7 +683,7 @@ public class IsoHDPerspective implements HDPerspective {
         /**
          * Step block iterator: false if done
          */
-        private final boolean raytraceStepIterator(int miny, int maxy) {
+        private boolean raytraceStepIterator(int miny, int maxy) {
             /* If Y step is next best */
             if ((t_next_y <= t_next_x) && (t_next_y <= t_next_z)) {
                 y += y_inc;
@@ -704,7 +718,7 @@ public class IsoHDPerspective implements HDPerspective {
         /**
          * Trace ray, based on "Voxel Tranversal along a 3D line"
          */
-        private final void raytrace(MapChunkCache cache, HDShaderState[] shaderstate, boolean[] shaderdone) {
+        private void raytrace(MapChunkCache cache, HDShaderState[] shaderstate, boolean[] shaderdone) {
         	int minY = cache.getWorld().minY;
         	int height = cache.getWorld().worldheight;
         	
@@ -732,7 +746,7 @@ public class IsoHDPerspective implements HDPerspective {
             }
         }
 
-        private final void raytrace_section_init() {
+        private void raytrace_section_init() {
             t = t - 0.000001;
             double xx = top.x + t * direction.x;
             double yy = top.y + t * direction.y;
@@ -776,15 +790,19 @@ public class IsoHDPerspective implements HDPerspective {
             }
         }
 
-        private final boolean raytraceSubblock(short[] model, boolean firsttime) {
+        private 
+        boolean raytraceSubblock(short[] model, boolean firsttime) {
             if(firsttime) {
             	mt = t + 0.00000001;
-            	xx = top.x + mt * direction.x;  
-            	yy = top.y + mt * direction.y;  
-            	zz = top.z + mt * direction.z;
+            	double xx = top.x + mt * direction.x;  
+            	double yy = top.y + mt * direction.y;  
+            	double zz = top.z + mt * direction.z;
             	mx = (int)((xx - fastFloor(xx)) * modscale);
             	my = (int)((yy - fastFloor(yy)) * modscale);
             	mz = (int)((zz - fastFloor(zz)) * modscale);
+            	midx = modscale2*my + modscale*mz + mx;
+            	mstep_y = y_inc * modscale2;
+            	mstep_z = z_inc * modscale;
             	mdt_dx = dt_dx / modscale;
             	mdt_dy = dt_dy / modscale;
             	mdt_dz = dt_dz / modscale;
@@ -809,14 +827,14 @@ public class IsoHDPerspective implements HDPerspective {
             boolean skip = !firsttime;	/* Skip first block on continue */
             while(mt <= mtend) {
             	if(!skip) {
-            		try {
-            			int blkalpha = model[modscale*modscale*my + modscale*mz + mx];
-            			if(blkalpha > 0) {
-            				subalpha = blkalpha;
-            				return false;
-            			}
-            		} catch (ArrayIndexOutOfBoundsException aioobx) {	/* We're outside the model, so miss */
-            			return true;
+            		/* Bounds check: bitmask — sign bit set if any index < 0 or >= modscale */
+            		if ((mx | my | mz | (modscale - 1 - mx) | (modscale - 1 - my) | (modscale - 1 - mz)) < 0) {
+            			return true;  /* Outside model bounds */
+            		}
+            		int blkalpha = model[midx];
+            		if(blkalpha > 0) {
+            			subalpha = blkalpha;
+            			return false;
             		}
             	}
             	else {
@@ -826,6 +844,7 @@ public class IsoHDPerspective implements HDPerspective {
                 /* If X step is next best */
                 if((mt_next_x <= mt_next_y) && (mt_next_x <= mt_next_z)) {
                     mx += x_inc;
+                    midx += x_inc;
                     mt = mt_next_x;
                     mt_next_x += mdt_dx;
                     laststep = stepx;
@@ -836,6 +855,7 @@ public class IsoHDPerspective implements HDPerspective {
                 /* If Y step is next best */
                 else if((mt_next_y <= mt_next_x) && (mt_next_y <= mt_next_z)) {
                     my += y_inc;
+                    midx += mstep_y;
                     mt = mt_next_y;
                     mt_next_y += mdt_dy;
                     laststep = stepy;
@@ -846,6 +866,7 @@ public class IsoHDPerspective implements HDPerspective {
                 /* Else, Z step is next best */
                 else {
                     mz += z_inc;
+                    midx += mstep_z;
                     mt = mt_next_z;
                     mt_next_z += mdt_dz;
                     laststep = stepz;
@@ -857,6 +878,7 @@ public class IsoHDPerspective implements HDPerspective {
             return true;
         }
         
+        @Override
         public final int[] getSubblockCoord() {
             if(cur_patch >= 0) {    /* If patch hit */
                 double tt = cur_patch_t;
@@ -885,6 +907,7 @@ public class IsoHDPerspective implements HDPerspective {
         }
         
         // Is the hit on a cullable face?
+        @Override
         public final boolean isOnFace() {
             double tt;
             if(cur_patch >= 0) {    /* If patch hit */
@@ -1051,7 +1074,7 @@ public class IsoHDPerspective implements HDPerspective {
 
     @Override
     public List<TileFlags.TileCoord> getTileCoords(DynmapWorld world, int x, int y, int z, int tilescale) {
-        HashSet<TileFlags.TileCoord> tiles = new HashSet<TileFlags.TileCoord>();
+        HashSet<TileFlags.TileCoord> tiles = new HashSet<>();
         Vector3D block = new Vector3D();
         block.x = x;
         block.y = y;
@@ -1074,12 +1097,12 @@ public class IsoHDPerspective implements HDPerspective {
             block.y = inity;
             block.x += 1;
         }
-        return new ArrayList<TileFlags.TileCoord>(tiles);
+        return new ArrayList<>(tiles);
     }
 
     @Override
     public List<TileFlags.TileCoord> getTileCoords(DynmapWorld world, int minx, int miny, int minz, int maxx, int maxy, int maxz, int tilescale) {
-        ArrayList<TileFlags.TileCoord> tiles = new ArrayList<TileFlags.TileCoord>();
+        ArrayList<TileFlags.TileCoord> tiles = new ArrayList<>();
         Vector3D blocks[] = new Vector3D[] { new Vector3D(), new Vector3D() };
         blocks[0].x = minx - 1;
         blocks[0].y = miny - 1;
@@ -1169,7 +1192,7 @@ public class IsoHDPerspective implements HDPerspective {
          * 6 = bottom-upper-right (XYz), 
          * 7 = top-upper-right (XYZ) */  
         Vector3D corners[] = new Vector3D[8];
-        double dx = -basemodscale, dy = -basemodscale;    /* Add 1 block on each axis */
+        double dx = -basemodscale, dy;    /* Add 1 block on each axis */
         for(int x = t.tx, idx = 0; x <= (t.tx+1); x++) {
             dy = -basemodscale;
             for(int y = t.ty; y <= (t.ty+1); y++) {
@@ -1204,7 +1227,7 @@ public class IsoHDPerspective implements HDPerspective {
             }
         }
         /* Now, need to walk through the min/max range to see which chunks are actually needed */
-        ArrayList<DynmapChunk> chunks = new ArrayList<DynmapChunk>();
+        ArrayList<DynmapChunk> chunks = new ArrayList<>();
         
         for(int x = min_chunk_x; x <= max_chunk_x; x++) {
             for(int z = min_chunk_z; z <= max_chunk_z; z++) {
@@ -1294,16 +1317,46 @@ public class IsoHDPerspective implements HDPerspective {
         	miny = tile.getDynmapWorld().minY;
         }
         
-        for(int x = 0; x < tileSize * sizescale; x++) {
+        final int tilePixelSize = tileSize * sizescale;
+        final double invSizescale = 1.0 / sizescale;
+
+        /* Precompute ray direction — constant for all pixels in this tile.
+         * direction = map_to_world * (0, 0, (miny-0.5) - (height+0.5)) */
+        ps.direction.x = 0.0; ps.direction.y = 0.0;
+        ps.direction.z = (miny - 0.5) - (height + 0.5);
+        map_to_world.transform(ps.direction);
+
+        /* Decompose map_to_world into per-axis step vectors so we can compute
+         * ps.top incrementally (3 muls + 9 adds/pixel) rather than doing two
+         * full 3x3 matrix transforms (18 muls + 12 adds) + a subtract/pixel. */
+        /* xstep = map_to_world * (1,0,0) — how top shifts per unit of px (map-x) */
+        Vector3D xstep = new Vector3D(1.0, 0.0, 0.0);
+        map_to_world.transform(xstep);
+        /* ystep = map_to_world * (0,1,0) — how top shifts per unit of py (map-y) */
+        Vector3D ystep = new Vector3D(0.0, 1.0, 0.0);
+        map_to_world.transform(ystep);
+        /* zbase = map_to_world * (0,0,height+0.5) — constant z contribution */
+        Vector3D zbase = new Vector3D(0.0, 0.0, height + 0.5);
+        map_to_world.transform(zbase);
+
+        for(int x = 0; x < tilePixelSize; x++) {
             ps.px = x;
-            for(int y = 0; y < tileSize * sizescale; y++) {
-                ps.top.x = ps.bottom.x = xbase + (x + 0.5) / sizescale;    /* Start at center of pixel at Y=height+0.5, bottom at Y=-0.5 */
-                ps.top.y = ps.bottom.y = ybase + (y + 0.5) / sizescale;
-                ps.top.z = height + 0.5; ps.bottom.z = miny - 0.5;
-                map_to_world.transform(ps.top);            /* Transform to world coordinates */
-                map_to_world.transform(ps.bottom);
-                ps.direction.set(ps.bottom);
-                ps.direction.subtract(ps.top);
+            final double px_center = xbase + (x + 0.5) * invSizescale;
+            /* Column-constant portion: zbase + xstep * px_center */
+            final double colx = zbase.x + xstep.x * px_center;
+            final double coly = zbase.y + xstep.y * px_center;
+            final double colz = zbase.z + xstep.z * px_center;
+            double py_center = ybase + 0.5 * invSizescale;
+            for(int y = 0; y < tilePixelSize; y++) {
+                /* top = column-contribution + ystep * py_center */
+                ps.top.x = colx + ystep.x * py_center;
+                ps.top.y = coly + ystep.y * py_center;
+                ps.top.z = colz + ystep.z * py_center;
+                /* bottom = top + direction (avoids second matrix transform) */
+                ps.bottom.x = ps.top.x + ps.direction.x;
+                ps.bottom.y = ps.top.y + ps.direction.y;
+                ps.bottom.z = ps.top.z + ps.direction.z;
+                py_center += invSizescale;
                 ps.py = y / sizescale;
                 for(int i = 0; i < numshaders; i++) {
                     shaderstate[i].reset(ps);
@@ -1312,8 +1365,8 @@ public class IsoHDPerspective implements HDPerspective {
                     ps.raytrace(cache, shaderstate, shaderdone);
                 } catch (Exception ex) {
                     Log.severe("Error while raytracing tile: perspective=" + this.name + ", coord=" + mapiter.getX() + "," + mapiter.getY() + "," + mapiter.getZ() + ", blockid=" + mapiter.getBlockType() + ", lighting=" + mapiter.getBlockSkyLight() + ":" + mapiter.getBlockEmittedLight() + ", biome=" + mapiter.getBiome().toString(), ex);
-                    ex.printStackTrace();
                 }
+                final int rowOffset = (tilePixelSize - y - 1) * tilePixelSize + x;
                 for(int i = 0; i < numshaders; i++) {
                     if(shaderdone[i] == false) {
                         shaderstate[i].rayFinished(ps);
@@ -1325,21 +1378,11 @@ public class IsoHDPerspective implements HDPerspective {
                     shaderstate[i].getRayColor(rslt, 0);
                     int c_argb = rslt.getARGB();
                     if (c_argb != 0) rendered[i] = true;
-                    if (isOpaque[i] && (c_argb == 0)) {
-                        argb_buf[i][(tileSize*sizescale-y-1)*tileSize*sizescale + x] = bgnight[i];
-                    }
-                    else {
-                        argb_buf[i][(tileSize*sizescale-y-1)*tileSize*sizescale + x] = c_argb;
-                    }
+                    argb_buf[i][rowOffset] = (isOpaque[i] && (c_argb == 0)) ? bgnight[i] : c_argb;
                     if (day_argb_buf[i] != null) {
                         shaderstate[i].getRayColor(rslt, 1);
                         c_argb = rslt.getARGB();
-                        if (isOpaque[i] && (c_argb == 0)) {
-                            day_argb_buf[i][(tileSize*sizescale-y-1)*tileSize*sizescale + x] = bgday[i];
-                        }
-                        else {
-                            day_argb_buf[i][(tileSize*sizescale-y-1)*tileSize*sizescale + x] = c_argb;
-                        }
+                        day_argb_buf[i][rowOffset] = (isOpaque[i] && (c_argb == 0)) ? bgday[i] : c_argb;
                     }
                 }
             }
@@ -1450,7 +1493,7 @@ public class IsoHDPerspective implements HDPerspective {
         return name;
     }
 
-    private static String[] directions = { "N", "NE", "E", "SE", "S", "SW", "W", "NW" };
+    private static final String[] directions = { "N", "NE", "E", "SE", "S", "SW", "W", "NW" };
     @Override
     public void addClientConfiguration(JSONObject mapObject) {
         s(mapObject, "perspective", name);
@@ -1463,7 +1506,7 @@ public class IsoHDPerspective implements HDPerspective {
         s(mapObject, "compassview", directions[dir]);
     }
     
-    private static final int fastFloor(double f) {
+    private static int fastFloor(double f) {
         return ((int)(f + 1000000000.0)) - 1000000000;
     }
     

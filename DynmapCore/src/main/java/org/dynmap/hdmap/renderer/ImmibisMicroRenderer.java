@@ -224,7 +224,7 @@ public class ImmibisMicroRenderer extends CustomRenderer {
         Object v = ctx.getBlockTileEntityField("ICMP");
 
         /* Build patch list */
-        ArrayList<RenderPatch> list = new ArrayList<RenderPatch>();
+        ArrayList<RenderPatch> list = new ArrayList<>();
         if ((v != null) && (v instanceof List)) {
             List<?> lv = (List<?>) v;
             for (Object lval : lv) {
@@ -238,13 +238,13 @@ public class ImmibisMicroRenderer extends CustomRenderer {
                 }
             }
         }
-        return list.toArray(new RenderPatch[list.size()]);
+        return list.toArray(new RenderPatch[0]);
     }
     
-    private boolean isHollow(int shape, int thickness) {
+    private boolean isHollow(int shape) {
         return (shape == 3);
     }
-    private double getThickness(int shape, int thickness) {
+    private double getThickness(int thickness) {
         return (0.125 * thickness);
     }
 
@@ -322,12 +322,12 @@ public class ImmibisMicroRenderer extends CustomRenderer {
             pos = 0;
         }
         sides = materialTextureMap[material];   /* Get sides map for texture */
-        double thick = getThickness(shape, thickness);
+        double thick = getThickness(thickness);
         if (thick <= 0.0) return;
         if (thick > 1.0) thick = 1.0;
         
         /* If a hollow block, handle specially */
-        if(isHollow(shape, thickness)) {
+        if(isHollow(shape)) {
             switch(pos) {
                 case 1: /* X min cover */
                     CustomRenderer.addBox(rpf, list, 0, thick, 0, 0.75, 0, 0.25, sides);

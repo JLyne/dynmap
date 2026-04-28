@@ -24,9 +24,11 @@ public class GenericChunkSection {
 		BlockStateAccess3D(DynmapBlockState bs[]) {
 			blocks = bs;
 		}
+        @Override
 		public final DynmapBlockState getBlock(int x, int y, int z) {
-			return blocks[(256 * (y & 0xF)) + (16 * (z & 0xF)) + (x & 0xF)];
+			return blocks[((y & 0xF) << 8) | ((z & 0xF) << 4) | (x & 0xF)];
 		}
+        @Override
 		public final DynmapBlockState getBlock(GenericChunkPos pos) {
 			return blocks[pos.soffset];
 		}
@@ -39,9 +41,11 @@ public class GenericChunkSection {
 			blocks = blks;
 			palette = pal;
 		}
+        @Override
 		public final DynmapBlockState getBlock(int x, int y, int z) {
-			return palette[blocks[(256 * (y & 0xF)) + (16 * (z & 0xF)) + (x & 0xF)]];
+			return palette[blocks[((y & 0xF) << 8) | ((z & 0xF) << 4) | (x & 0xF)]];
 		}
+        @Override
 		public final DynmapBlockState getBlock(GenericChunkPos pos) {
 			return palette[blocks[pos.soffset]];
 		}
@@ -51,9 +55,11 @@ public class GenericChunkSection {
 		BlockStateAccessSingle(DynmapBlockState bs) {
 			block = bs;
 		}
+        @Override
 		public final DynmapBlockState getBlock(int x, int y, int z) {
 			return block;
 		}
+        @Override
 		public final DynmapBlockState getBlock(GenericChunkPos pos) {
 			return block;
 		}
@@ -70,12 +76,15 @@ public class GenericChunkSection {
 		BiomeAccess2D(BiomeMap b[]) {
 			biomes = b;
 		}
+        @Override
 		public final BiomeMap getBiome(int x, int y, int z) {
 			return biomes[((z & 0xF) << 4) + (x & 0xF)];
 		}
+        @Override
 		public final BiomeMap getBiome(GenericChunkPos pos) {
 			return biomes[pos.soffset & 0xFF];	// Just ZX portion
 		}
+        @Override
 		public String toString() {
 			return String.format("Biome2D(%s)", Arrays.deepToString(biomes));
 		}
@@ -87,12 +96,15 @@ public class GenericChunkSection {
 		BiomeAccess3D(BiomeMap[] b) {
 			biomes = b;
 		}
+        @Override
 		public final BiomeMap getBiome(int x, int y, int z) {
 			return biomes[ ((y & 0xC) << 2) | (z & 0xC) | ((x & 0xC) >> 2) ];
 		}
+        @Override
 		public final BiomeMap getBiome(GenericChunkPos pos) {
 			return biomes[pos.sdiv4offset];
 		}
+        @Override
 		public String toString() {
 			return String.format("Biome3D(%s)", Arrays.deepToString(biomes));
 		}
@@ -103,12 +115,15 @@ public class GenericChunkSection {
 		BiomeAccessSingle(BiomeMap b) {
 			biome = b;
 		}
+        @Override
 		public final BiomeMap getBiome(int x, int y, int z) {
 			return biome;
 		}
+        @Override
 		public final BiomeMap getBiome(GenericChunkPos pos) {
 			return biome;
 		}
+        @Override
 		public String toString() {
 			return String.format("Biome1(%s)", biome);
 		}
@@ -126,13 +141,15 @@ public class GenericChunkSection {
 			light = new long[256];
 			if (lig != null) {
 				for (int off = 0; (off < lig.length) && (off < 2048); off++) {
-					light[off >> 3] |= (0xFFL & (long)lig[off]) << (8 * (off & 0x7));
+					light[off >> 3] |= (0xFFL & (long)lig[off]) << ((off & 0x7) << 3);
 				}
 			}
 		}
+        @Override
 		public final int getLight(int x, int y, int z) {
-			return 0xF & (int)(light[(16 * (y & 0xF)) + (z & 0xF)] >> (4 * (x & 0xF)));
+			return 0xF & (int)(light[((y & 0xF) << 4) | (z & 0xF)] >> ((x & 0xF) << 2));
 		}
+        @Override
 		public final int getLight(GenericChunkPos pos) {
 			return 0xF & (int)(light[pos.soffset >> 4] >> (4 * pos.sx));			
 		}
@@ -142,9 +159,11 @@ public class GenericChunkSection {
 		LightingAccessSingle(int lig) {
 			light = lig & 0xF;
 		}
+        @Override
 		public final int getLight(int x, int y, int z) {
 			return light;
 		}
+        @Override
 		public final int getLight(GenericChunkPos pos) {
 			return light;
 		}
@@ -156,12 +175,13 @@ public class GenericChunkSection {
 		emitted = emitac;
 		isEmpty = empty;
 	}
+	@Override
 	public String toString() {
 		return String.format("sect(bip:%s)", biomes);
 	}
-	private static BiomeAccess defaultBiome = new BiomeAccessSingle(BiomeMap.NULL);
-	private static BlockStateAccess defaultBlockState = new BlockStateAccessSingle(DynmapBlockState.AIR);
-	private static LightingAccess defaultLight = new LightingAccessSingle(0);
+	private static final BiomeAccess defaultBiome = new BiomeAccessSingle(BiomeMap.NULL);
+	private static final BlockStateAccess defaultBlockState = new BlockStateAccessSingle(DynmapBlockState.AIR);
+	private static final LightingAccess defaultLight = new LightingAccessSingle(0);
 	
 	// Shared default empty section
 	public static final GenericChunkSection EMPTY = new GenericChunkSection(defaultBlockState, defaultBiome, new LightingAccessSingle(15), defaultLight, true);
@@ -182,7 +202,7 @@ public class GenericChunkSection {
 			reset();
 		}
 		// Reset builder to default state
-		public void reset() {
+		public final void reset() {
 			bsaccumsing = DynmapBlockState.AIR;
 			bsaccum = null;
 			baaccumsingle = BiomeMap.NULL;
@@ -250,12 +270,16 @@ public class GenericChunkSection {
 		}
 		// Set block state 
 		public Builder xyzBlockState(int x, int y, int z, DynmapBlockState block) {
+			return xyzBlockState(((y & 0xF) << 8) + ((z & 0xF) << 4) + (x & 0xF), block);
+		}
+		// Set block state (yzx=nibble order Y<<8 | Z << 4 | X)
+		public Builder xyzBlockState(int yzx, DynmapBlockState block) {
 			if (bsaccum == null) {
 				bsaccum = new DynmapBlockState[4096];
 				Arrays.fill(bsaccum, DynmapBlockState.AIR);
 				bsaccumsing = DynmapBlockState.AIR;
 			}
-			bsaccum[((y & 0xF) << 8) + ((z & 0xF) << 4) + (x & 0xF)] = block;
+			bsaccum[yzx] = block;
 			empty = false;
 			return this;
 		}
@@ -269,10 +293,14 @@ public class GenericChunkSection {
 		}
 		// Set block state using palette
 		public Builder xyzBlockStateInPalette(int x, int y, int z, short palidx) {
+			return xyzBlockStateInPalette(((y & 0xF) << 8) + ((z & 0xF) << 4) + (x & 0xF), palidx);
+		}
+		// Set block state using palette (yzx=nibble order Y<<8 | Z << 4 | X)
+		public Builder xyzBlockStateInPalette(int yzx, short palidx) {
 			if (bsblks == null) {
 				bsblks = new short[4096];
 			}
-			bsblks[((y & 0xF) << 8) + ((z & 0xF) << 4) + (x & 0xF)] = palidx;
+			bsblks[yzx] = palidx;
 			empty = false;
 			return this;
 		}
@@ -293,8 +321,8 @@ public class GenericChunkSection {
 			if (bsaccum != null) {
 				DynmapBlockState v = bsaccum[0];	// Get first
 				boolean mismatch = false;
-				for (int i = 0; i < bsaccum.length; i++) {
-					if (bsaccum[i] != v) {
+				for (DynmapBlockState bsaccum1 : bsaccum) {
+					if (bsaccum1 != v) {
 						mismatch = true;
 						break;
 					}
@@ -333,8 +361,8 @@ public class GenericChunkSection {
 			if (baaccum != null) {
 				BiomeMap v = baaccum[0];	// Get first
 				boolean mismatch = false;
-				for (int i = 0; i < baaccum.length; i++) {
-					if (baaccum[i] != v) {
+				for (BiomeMap baaccum1 : baaccum) {
+					if (baaccum1 != v) {
 						mismatch = true;
 						break;
 					}

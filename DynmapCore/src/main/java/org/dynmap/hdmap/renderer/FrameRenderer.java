@@ -15,13 +15,13 @@ import org.dynmap.renderer.RenderPatchFactory;
 
 public class FrameRenderer extends CustomRenderer {
     // Map of block ID sets for linking blocks
-    private static Map<String, BitSet> linked_ids_by_set = new HashMap<String, BitSet>();
+    private static final Map<String, BitSet> linked_ids_by_set = new HashMap<>();
     // Set of linked blocks
     private BitSet linked_ids;
     // Diameter of frame/wore (1.0 = full block)
     private double diameter;
     // Models for connection graph (bit0=X+,bit1=X-,bit2=Y+,bit3=Y-,bit4=Z+,bit5=Z-), by texture index
-    private RenderPatch[][][] models = new RenderPatch[64][][];
+    private final RenderPatch[][][] models = new RenderPatch[64][][];
     // Base index (based on force parameter)
     private int base_index = 0;
     // Texture index map
@@ -95,17 +95,17 @@ public class FrameRenderer extends CustomRenderer {
             txtOffset = 0;
             String txt_off = custparm.get("textureOffset");
             if(txt_off != null) {
-                txtOffset = Integer.valueOf(txt_off);
+                txtOffset = Integer.parseInt(txt_off);
             }
             idx_attrib = idx;
             String txt_def = custparm.get("textureDefault");
             if(txt_def != null) {
-                txtDefIndex = Integer.valueOf(txt_def);
+                txtDefIndex = Integer.parseInt(txt_def);
             }
             
             map_id = custparm.get("textureMap");
             if(map_id == null) {    /* If no map, indexes are explicit */
-                ArrayList<Integer> map = new ArrayList<Integer>();
+                ArrayList<Integer> map = new ArrayList<>();
                 for(int id = 0; ; id++) {
                     String v = custparm.get("index" + id);
                     if(v == null) break;
@@ -113,7 +113,7 @@ public class FrameRenderer extends CustomRenderer {
                 }
                 txtIndex = new int[map.size()];
                 for(int id = 0; id < txtIndex.length; id++) {
-                    txtIndex[id] = map.get(id).intValue() + txtOffset;
+                    txtIndex[id] = map.get(id) + txtOffset;
                 }
                 txtCount = txtIndex.length;
             }
@@ -146,7 +146,7 @@ public class FrameRenderer extends CustomRenderer {
     }
 
     private RenderPatch[] buildModel(RenderPatchFactory rpf, int idx, int txt_idx) {
-        ArrayList<RenderPatch> list = new ArrayList<RenderPatch>();
+        ArrayList<RenderPatch> list = new ArrayList<>();
         int[] sides = { txt_idx,txt_idx,txt_idx,txt_idx,txt_idx,txt_idx };
         
         /* If we have an X axis match */
@@ -183,7 +183,7 @@ public class FrameRenderer extends CustomRenderer {
                 sides);
         }
         
-        return list.toArray(new RenderPatch[list.size()]);
+        return list.toArray(new RenderPatch[0]);
     }
 
     private static final int[] x_off = { -1, 1, 0, 0, 0, 0 };

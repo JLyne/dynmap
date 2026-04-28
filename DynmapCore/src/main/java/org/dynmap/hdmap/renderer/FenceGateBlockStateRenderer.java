@@ -52,7 +52,7 @@ public class FenceGateBlockStateRenderer extends CustomRenderer {
         	}
         }
         private void buildMeshes(RenderPatchFactory rpf) {
-            ArrayList<RenderPatch> list = new ArrayList<RenderPatch>();
+            ArrayList<RenderPatch> list = new ArrayList<>();
             // Build model for closed fence gate facing south (default)
             addBox(rpf, list, 0.0, 0.125, 0.3125, 1.0, 0.4375, 0.5625);
             addBox(rpf, list, 0.875, 1.0, 0.3125, 1.0, 0.4375, 0.5625);
@@ -62,7 +62,7 @@ public class FenceGateBlockStateRenderer extends CustomRenderer {
             addBox(rpf, list, 0.125, 0.375, 0.75, 0.9375, 0.4375, 0.5625);
             addBox(rpf, list, 0.625, 0.875, 0.375, 0.5625, 0.4375, 0.5625);
             addBox(rpf, list, 0.625, 0.875, 0.75, 0.9375, 0.4375, 0.5625);
-            meshes[IDX_SOUTH | IDX_CLOSED | IDX_NOTINWALL] = list.toArray(new RenderPatch[list.size()]);
+            meshes[IDX_SOUTH | IDX_CLOSED | IDX_NOTINWALL] = list.toArray(new RenderPatch[0]);
             list.clear();
             // Build rotated versions
             rotateModel(rpf, IDX_SOUTH | IDX_CLOSED | IDX_NOTINWALL, IDX_NORTH | IDX_CLOSED | IDX_NOTINWALL, 180);
@@ -92,7 +92,7 @@ public class FenceGateBlockStateRenderer extends CustomRenderer {
             addBox(rpf, list, 0.125, 0.375, 0.5625, 0.75, 0.4375, 0.5625);
             addBox(rpf, list, 0.625, 0.875, 0.1875, 0.375, 0.4375, 0.5625);
             addBox(rpf, list, 0.625, 0.875, 0.5625, 0.75, 0.4375, 0.5625);
-            meshes[IDX_SOUTH | IDX_CLOSED | IDX_INWALL] = list.toArray(new RenderPatch[list.size()]);
+            meshes[IDX_SOUTH | IDX_CLOSED | IDX_INWALL] = list.toArray(new RenderPatch[0]);
             list.clear();
             // Build rotated versions
             rotateModel(rpf, IDX_SOUTH | IDX_CLOSED | IDX_INWALL, IDX_NORTH | IDX_CLOSED | IDX_INWALL, 180);

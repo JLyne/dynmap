@@ -11,7 +11,7 @@ public class TexturePackHDUnderwaterShader extends TexturePackHDShader {
     
     class UnderwaterShaderState extends TexturePackHDShader.ShaderState {
         private boolean ready;
-        private DynmapBlockState full_water;
+        private final DynmapBlockState full_water;
         
         protected UnderwaterShaderState(MapIterator mapiter, HDMap map, MapChunkCache cache, int scale) {
             super(mapiter, map, cache, scale);
@@ -26,6 +26,7 @@ public class TexturePackHDUnderwaterShader extends TexturePackHDShader {
          * Process next ray step - called for each block on route
          * @return true if ray is done, false if ray needs to continue
          */
+        @Override
         public boolean processBlock(HDPerspectiveState ps) {
     		DynmapBlockState bs = ps.getBlockState();
     		if (bs.isWater() || bs.isWaterlogged()) {

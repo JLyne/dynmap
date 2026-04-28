@@ -1,7 +1,5 @@
 package org.dynmap.hdmap;
 
-import static org.dynmap.JSONUtils.s;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -9,6 +7,7 @@ import java.util.HashMap;
 import org.dynmap.Color;
 import org.dynmap.ConfigurationNode;
 import org.dynmap.DynmapCore;
+import static org.dynmap.JSONUtils.s;
 import org.dynmap.Log;
 import org.dynmap.MapManager;
 import org.dynmap.common.DynmapCommandSender;
@@ -28,30 +27,33 @@ public class ChunkStatusHDShader implements HDShader {
     	Color defcolor;
     	ChunkStatusMap(String s, int c) {
     		defcolor = new Color((c>>16)&0xFF, (c>>8)&0xFF, c&0xFF);
-    		statusmap.put(s, this);
     	}
     };
-    private static HashMap<String, ChunkStatusMap> statusmap = new HashMap<String, ChunkStatusMap>();
+    private static final HashMap<String, ChunkStatusMap> statusmap = new HashMap<>();
     
+    private static void addChunkStatusMap(String s, int clr) {
+        statusmap.put(s, new ChunkStatusMap(s, clr));
+    }
     static {
-		new ChunkStatusMap("empty", 0xFF0000);
-		new ChunkStatusMap("structure_starts", 0xFF1493);
-		new ChunkStatusMap("structure_references", 0xFF7F50);
-		new ChunkStatusMap("biomes", 0xFFA500);
-		new ChunkStatusMap("noise", 0xFFD700);
-		new ChunkStatusMap("surface", 0xFFFF00);
-		new ChunkStatusMap("carvers", 0xFFEFD5);
-		new ChunkStatusMap("liquid_carvers", 0xF0E68C);
-		new ChunkStatusMap("features", 0xBDB76B);
-		new ChunkStatusMap("light", 0xDDA0DD);
-		new ChunkStatusMap("spawn", 0xFF00FF);
-		new ChunkStatusMap("heightmaps", 0x9370DB);
-		new ChunkStatusMap("full", 0x32CD32);
+		addChunkStatusMap("empty", 0xFF0000);
+		addChunkStatusMap("structure_starts", 0xFF1493);
+		addChunkStatusMap("structure_references", 0xFF7F50);
+		addChunkStatusMap("biomes", 0xFFA500);
+		addChunkStatusMap("noise", 0xFFD700);
+		addChunkStatusMap("surface", 0xFFFF00);
+		addChunkStatusMap("carvers", 0xFFEFD5);
+		addChunkStatusMap("liquid_carvers", 0xF0E68C);
+		addChunkStatusMap("features", 0xBDB76B);
+		addChunkStatusMap("initialize_light", 0xAAA0AA);
+		addChunkStatusMap("light", 0xDDA0DD);
+		addChunkStatusMap("heightmaps", 0x9370DB);
+		addChunkStatusMap("spawn", 0xFF00FF);
+		addChunkStatusMap("full", 0x32CD32);
     }
 
     final static Color unknown_color = new Color(255, 255, 255);
     
-    private ArrayList<String> unknown_state = new ArrayList<String>();
+    private final ArrayList<String> unknown_state = new ArrayList<>();
     	
     public ChunkStatusHDShader(DynmapCore core, ConfigurationNode configuration) {
         name = (String) configuration.get("name");
@@ -93,13 +95,13 @@ public class ChunkStatusHDShader implements HDShader {
     }
     
     private class OurShaderState implements HDShaderState {
-        private Color color[];
-        private Color c;
+        private final Color color[];
+        private final Color c;
         protected HDMap map;
-        private HDLighting lighting;
+        private final HDLighting lighting;
         final int[] lightingTable;
         
-        private OurShaderState(MapIterator mapiter, HDMap map, MapChunkCache cache, int scale) {
+        private OurShaderState(HDMap map, MapChunkCache cache) {
             this.map = map;
             this.lighting = map.getLighting();
             if(lighting.isNightAndDayEnabled()) {
@@ -119,6 +121,7 @@ public class ChunkStatusHDShader implements HDShader {
         /**
          * Get our shader
          */
+        @Override
         public HDShader getShader() {
             return ChunkStatusHDShader.this;
         }
@@ -126,6 +129,7 @@ public class ChunkStatusHDShader implements HDShader {
         /**
          * Get our map
          */
+        @Override
         public HDMap getMap() {
             return map;
         }
@@ -133,6 +137,7 @@ public class ChunkStatusHDShader implements HDShader {
         /**
          * Get our lighting
          */
+        @Override
         public HDLighting getLighting() {
             return lighting;
         }
@@ -140,14 +145,17 @@ public class ChunkStatusHDShader implements HDShader {
         /**
          * Reset renderer state for new ray
          */
+        @Override
         public void reset(HDPerspectiveState ps) {
-            for(int i = 0; i < color.length; i++)
-                color[i].setTransparent();
+            for (Color color1 : color) {
+                color1.setTransparent();
+            }
         }
         /**
          * Process next ray step - called for each block on route
          * @return true if ray is done, false if ray needs to continue
          */
+        @Override
         public boolean processBlock(HDPerspectiveState ps) {
             if (ps.getBlockState().isAir()) {
                 return false;
@@ -173,6 +181,7 @@ public class ChunkStatusHDShader implements HDShader {
         /**
          * Ray ended - used to report that ray has exited map (called if renderer has not reported complete)
          */
+        @Override
         public void rayFinished(HDPerspectiveState ps) {
         }
         /**
@@ -180,12 +189,14 @@ public class ChunkStatusHDShader implements HDShader {
          * @param c - object to store color value in
          * @param index - index of color to request (renderer specific - 0=default, 1=day for night/day renderer
          */
+        @Override
         public void getRayColor(Color c, int index) {
             c.setColor(color[index]);
         }
         /**
          * Clean up state object - called after last ray completed
          */
+        @Override
         public void cleanup() {
         }
         @Override
@@ -211,10 +222,11 @@ public class ChunkStatusHDShader implements HDShader {
      */
     @Override
     public HDShaderState getStateInstance(HDMap map, MapChunkCache cache, MapIterator mapiter, int scale) {
-        return new OurShaderState(mapiter, map, cache, scale);
+        return new OurShaderState(map, cache);
     }
     
     /* Add shader's contributions to JSON for map object */
+        @Override
     public void addClientConfiguration(JSONObject mapObject) {
         s(mapObject, "shader", name);
     }
@@ -222,9 +234,9 @@ public class ChunkStatusHDShader implements HDShader {
     public void exportAsMaterialLibrary(DynmapCommandSender sender, OBJExport out) throws IOException {
         throw new IOException("Export unsupported");
     }
-    private static final String[] nulllist = new String[0];
+    private static final String[] NULLLIST = new String[0];
     @Override
     public String[] getCurrentBlockMaterials(DynmapBlockState blk, MapIterator mapiter, int[] txtidx, BlockStep[] steps) {
-        return nulllist;
+        return NULLLIST;
     }
 }

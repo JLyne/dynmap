@@ -16,11 +16,11 @@ public class StairStateRenderer extends CustomRenderer {
     private static final int TEXTURE_BOTTOM = 2;
         
     // Array of meshes for normal steps - index = (data value & 7)
-    private RenderPatch[][] stepmeshes = new RenderPatch[8][];
+    private final RenderPatch[][] stepmeshes = new RenderPatch[8][];
     // Array of meshes for 3/4 steps - index = (data value & 7), with extra one clockwise from normal step
-    private RenderPatch[][] step_3_4_meshes = new RenderPatch[8][];
+    private final RenderPatch[][] step_3_4_meshes = new RenderPatch[8][];
     // Array of meshes for 1/4 steps - index = (data value & 7), with clockwise quarter clopped from normal step
-    private RenderPatch[][] step_1_4_meshes = new RenderPatch[8][];
+    private final RenderPatch[][] step_1_4_meshes = new RenderPatch[8][];
     
     @Override
     public boolean initializeRenderer(RenderPatchFactory rpf, String blkname, BitSet blockdatamask, Map<String,String> custparm) {
@@ -47,7 +47,7 @@ public class StairStateRenderer extends CustomRenderer {
     }
     
     private RenderPatch[] buildStepMeshes(RenderPatchFactory rpf, int dat) {
-        ArrayList<RenderPatch> list = new ArrayList<RenderPatch>();
+        ArrayList<RenderPatch> list = new ArrayList<>();
         /* If inverted, add half top */
         if((dat & 0x4) != 0) {
             addBox(rpf, list, 0, 1, 0.5, 1, 0, 1);
@@ -69,11 +69,11 @@ public class StairStateRenderer extends CustomRenderer {
                 addBox(rpf, list, 0, 1, 0, 1, 0, 0.5);
                 break;
         }
-        return list.toArray(new RenderPatch[list.size()]);
+        return list.toArray(new RenderPatch[0]);
     }
 
     private RenderPatch[] buildCornerStepMeshes(RenderPatchFactory rpf, int dat) {
-        ArrayList<RenderPatch> list = new ArrayList<RenderPatch>();
+        ArrayList<RenderPatch> list = new ArrayList<>();
         /* If inverted, add half top */
         if((dat & 0x4) != 0) {
             addBox(rpf, list, 0, 1, 0.5, 1, 0, 1);
@@ -95,11 +95,11 @@ public class StairStateRenderer extends CustomRenderer {
                 addBox(rpf, list, 0.5, 1, 0, 1, 0, 0.5);
                 break;
         }
-        return list.toArray(new RenderPatch[list.size()]);
+        return list.toArray(new RenderPatch[0]);
     }
 
     private RenderPatch[] buildIntCornerStepMeshes(RenderPatchFactory rpf, int dat) {
-        ArrayList<RenderPatch> list = new ArrayList<RenderPatch>();
+        ArrayList<RenderPatch> list = new ArrayList<>();
         /* If inverted, add half top */
         if((dat & 0x4) != 0) {
             addBox(rpf, list, 0, 1, 0.5, 1, 0, 1);
@@ -125,7 +125,7 @@ public class StairStateRenderer extends CustomRenderer {
                 addBox(rpf, list, 0.5, 1, 0, 1, 0.5, 1);
                 break;
         }
-        return list.toArray(new RenderPatch[list.size()]);
+        return list.toArray(new RenderPatch[0]);
     }
 
     // Outer and inner left equivalent to outer and innter right minus 90 degrees

@@ -103,7 +103,7 @@ public class HDBlockStateTextureMap {
         }
     }
 
-    private static final void resize(int newend) {
+    private static void resize(int newend) {
         if (newend < texmaps.length) return; 
         HDBlockStateTextureMap[] newm = new HDBlockStateTextureMap[newend+1];
         System.arraycopy(texmaps,  0,  newm,  0,  texmaps.length);
@@ -118,13 +118,13 @@ public class HDBlockStateTextureMap {
     
     // Lookup records by block state
     public static final HDBlockStateTextureMap getByBlockState(DynmapBlockState blk) {
-        HDBlockStateTextureMap m = HDBlockStateTextureMap.BLANK;
-        try {
-            m = texmaps[blk.globalStateIndex];
-        } catch (ArrayIndexOutOfBoundsException x) {
-            resize(blk.globalStateIndex);
+        HDBlockStateTextureMap[] tm = texmaps;  // hoist static field — avoids redundant load
+        int idx = blk.globalStateIndex;
+        if (idx >= tm.length) {
+            resize(idx);
+            return BLANK;
         }
-        return m;
+        return tm[idx];
     }
     // Copy given block state to given state index
     public static void copyToStateIndex(DynmapBlockState blk, HDBlockStateTextureMap map, TexturePack.BlockTransparency trans) {
@@ -151,13 +151,12 @@ public class HDBlockStateTextureMap {
     }
     // Get by global state index
     public static HDBlockStateTextureMap getByGlobalIndex(int gidx) {
-        HDBlockStateTextureMap m = HDBlockStateTextureMap.BLANK;
-        try {
-            m = texmaps[gidx];
-        } catch (ArrayIndexOutOfBoundsException x) {
+        HDBlockStateTextureMap[] tm = texmaps;  // hoist static field — avoids redundant load
+        if (gidx >= tm.length) {
             resize(gidx);
+            return BLANK;
         }
-        return m;
+        return tm[gidx];
     }
     // Get state by index
     public final HDBlockStateTextureMap getStateMap(DynmapBlockState blk, int stateid) {
@@ -165,13 +164,13 @@ public class HDBlockStateTextureMap {
     }
     // Get transparency for given block ID
     public static BlockTransparency getTransparency(DynmapBlockState blk) {
-        BlockTransparency trans = BlockTransparency.OPAQUE;
-        try {
-            trans = texmaps[blk.globalStateIndex].trans;
-        } catch (ArrayIndexOutOfBoundsException x) {
-            resize(blk.globalStateIndex);
+        HDBlockStateTextureMap[] tm = texmaps;  // hoist static field — avoids redundant load
+        int idx = blk.globalStateIndex;
+        if (idx >= tm.length) {
+            resize(idx);
+            return BlockTransparency.OPAQUE;
         }
-        return trans;
+        return tm[idx].trans;
     }
     // Build copy of block colorization data
     public static ColorizingData getColorizingData() {

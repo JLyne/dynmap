@@ -1,7 +1,5 @@
 package org.dynmap.hdmap;
 
-import static org.dynmap.JSONUtils.s;
-
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.TreeSet;
@@ -9,6 +7,7 @@ import java.util.TreeSet;
 import org.dynmap.Color;
 import org.dynmap.ConfigurationNode;
 import org.dynmap.DynmapCore;
+import static org.dynmap.JSONUtils.s;
 import org.dynmap.Log;
 import org.dynmap.MapManager;
 import org.dynmap.common.DynmapCommandSender;
@@ -39,7 +38,7 @@ public class InhabitedHDShader implements HDShader {
     }
     public InhabitedHDShader(DynmapCore core, ConfigurationNode configuration) {
         name = (String) configuration.get("name");
-        HashMap<Long, Color> map = new HashMap<Long, Color>();
+        HashMap<Long, Color> map = new HashMap<>();
         for (String key : configuration.keySet()) {
             if (key.startsWith("color")) {
                 try {
@@ -50,7 +49,7 @@ public class InhabitedHDShader implements HDShader {
                 }
             }
         }
-        TreeSet<Long> keys = new TreeSet<Long>(map.keySet());
+        TreeSet<Long> keys = new TreeSet<>(map.keySet());
         filllevel = new long[keys.size()];
         fillcolor = new Color[keys.size()];
         int idx = 0;
@@ -97,13 +96,13 @@ public class InhabitedHDShader implements HDShader {
     }
     
     private class OurShaderState implements HDShaderState {
-        private Color color[];
-        private Color c;
+        private final Color color[];
+        private final Color c;
         protected HDMap map;
-        private HDLighting lighting;
+        private final HDLighting lighting;
         final int[] lightingTable;
         
-        private OurShaderState(MapIterator mapiter, HDMap map, MapChunkCache cache, int scale) {
+        private OurShaderState(HDMap map, MapChunkCache cache) {
             this.map = map;
             this.lighting = map.getLighting();
             if(lighting.isNightAndDayEnabled()) {
@@ -123,6 +122,7 @@ public class InhabitedHDShader implements HDShader {
         /**
          * Get our shader
          */
+        @Override
         public HDShader getShader() {
             return InhabitedHDShader.this;
         }
@@ -130,6 +130,7 @@ public class InhabitedHDShader implements HDShader {
         /**
          * Get our map
          */
+        @Override
         public HDMap getMap() {
             return map;
         }
@@ -137,6 +138,7 @@ public class InhabitedHDShader implements HDShader {
         /**
          * Get our lighting
          */
+        @Override
         public HDLighting getLighting() {
             return lighting;
         }
@@ -144,14 +146,17 @@ public class InhabitedHDShader implements HDShader {
         /**
          * Reset renderer state for new ray
          */
+        @Override
         public void reset(HDPerspectiveState ps) {
-            for(int i = 0; i < color.length; i++)
-                color[i].setTransparent();
+            for (Color color1 : color) {
+                color1.setTransparent();
+            }
         }
         /**
          * Process next ray step - called for each block on route
          * @return true if ray is done, false if ray needs to continue
          */
+        @Override
         public boolean processBlock(HDPerspectiveState ps) {
             if (ps.getBlockState().isAir()) {
                 return false;
@@ -187,6 +192,7 @@ public class InhabitedHDShader implements HDShader {
         /**
          * Ray ended - used to report that ray has exited map (called if renderer has not reported complete)
          */
+        @Override
         public void rayFinished(HDPerspectiveState ps) {
         }
         /**
@@ -194,12 +200,14 @@ public class InhabitedHDShader implements HDShader {
          * @param c - object to store color value in
          * @param index - index of color to request (renderer specific - 0=default, 1=day for night/day renderer
          */
+        @Override
         public void getRayColor(Color c, int index) {
             c.setColor(color[index]);
         }
         /**
          * Clean up state object - called after last ray completed
          */
+        @Override
         public void cleanup() {
         }
         @Override
@@ -225,10 +233,11 @@ public class InhabitedHDShader implements HDShader {
      */
     @Override
     public HDShaderState getStateInstance(HDMap map, MapChunkCache cache, MapIterator mapiter, int scale) {
-        return new OurShaderState(mapiter, map, cache, scale);
+        return new OurShaderState(map, cache);
     }
     
     /* Add shader's contributions to JSON for map object */
+    @Override
     public void addClientConfiguration(JSONObject mapObject) {
         s(mapObject, "shader", name);
     }
@@ -236,9 +245,9 @@ public class InhabitedHDShader implements HDShader {
     public void exportAsMaterialLibrary(DynmapCommandSender sender, OBJExport out) throws IOException {
         throw new IOException("Export unsupported");
     }
-    private static final String[] nulllist = new String[0];
+    private static final String[] NULLLIST = new String[0];
     @Override
     public String[] getCurrentBlockMaterials(DynmapBlockState blk, MapIterator mapiter, int[] txtidx, BlockStep[] steps) {
-        return nulllist;
+        return NULLLIST;
     }
 }

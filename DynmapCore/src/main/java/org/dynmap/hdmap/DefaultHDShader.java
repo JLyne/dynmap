@@ -1,13 +1,12 @@
 package org.dynmap.hdmap;
 
-import static org.dynmap.JSONUtils.s;
-
 import java.io.IOException;
 
 import org.dynmap.Color;
 import org.dynmap.ColorScheme;
 import org.dynmap.ConfigurationNode;
 import org.dynmap.DynmapCore;
+import static org.dynmap.JSONUtils.s;
 import org.dynmap.MapManager;
 import org.dynmap.common.BiomeMap;
 import org.dynmap.common.DynmapCommandSender;
@@ -20,7 +19,7 @@ import org.dynmap.utils.MapIterator;
 import org.json.simple.JSONObject;
 
 public class DefaultHDShader implements HDShader {
-    private String name;
+    private final String name;
     protected ColorScheme colorScheme;
 
     protected boolean transparency; /* Is transparency support active? */
@@ -34,17 +33,19 @@ public class DefaultHDShader implements HDShader {
         colorScheme = ColorScheme.getScheme(core, configuration.getString("colorscheme", "default"));
         transparency = configuration.getBoolean("transparency", true);  /* Default on */
         String biomeopt = configuration.getString("biomecolored", "none");
-        if(biomeopt.equals("biome")) {
-            biomecolored = BiomeColorOption.BIOME;
-        }
-        else if(biomeopt.equals("temperature")) {
-            biomecolored = BiomeColorOption.TEMPERATURE;
-        }
-        else if(biomeopt.equals("rainfall")) {
-            biomecolored = BiomeColorOption.RAINFALL;
-        }
-        else {
-            biomecolored = BiomeColorOption.NONE;
+        switch (biomeopt) {
+            case "biome":
+                biomecolored = BiomeColorOption.BIOME;
+                break;
+            case "temperature":
+                biomecolored = BiomeColorOption.TEMPERATURE;
+                break;
+            case "rainfall":
+                biomecolored = BiomeColorOption.RAINFALL;
+                break;
+            default:
+                biomecolored = BiomeColorOption.NONE;
+                break;
         }
     }
     
@@ -84,12 +85,12 @@ public class DefaultHDShader implements HDShader {
     }
     
     private class OurShaderState implements HDShaderState {
-        private Color color[];
+        private final Color color[];
         protected MapIterator mapiter;
         protected HDMap map;
-        private Color tmpcolor[];
+        private final Color tmpcolor[];
         private int pixelodd;
-        private HDLighting lighting;
+        private final HDLighting lighting;
         final int[] lightingTable;
         
         private OurShaderState(MapIterator mapiter, HDMap map, MapChunkCache cache) {
@@ -114,6 +115,7 @@ public class DefaultHDShader implements HDShader {
         /**
          * Get our shader
          */
+        @Override
         public HDShader getShader() {
             return DefaultHDShader.this;
         }
@@ -121,21 +123,25 @@ public class DefaultHDShader implements HDShader {
         /**
          * Get our map
          */
+        @Override
         public HDMap getMap() {
             return map;
         }
         /**
          * Get our lighting
          */
+        @Override
         public HDLighting getLighting() {
             return lighting;
         }
         /**
          * Reset renderer state for new ray
          */
+        @Override
         public void reset(HDPerspectiveState ps) {
-            for(int i = 0; i < color.length; i++) 
-                color[i].setTransparent();
+            for (Color color1 : color) {
+                color1.setTransparent();
+            }
             pixelodd = (ps.getPixelX() & 0x3) + (ps.getPixelY()<<1);
         }
         
@@ -151,6 +157,7 @@ public class DefaultHDShader implements HDShader {
          * Process next ray step - called for each block on route
          * @return true if ray is done, false if ray needs to continue
          */
+        @Override
         public boolean processBlock(HDPerspectiveState ps) {
             int i;
             DynmapBlockState blocktype = ps.getBlockState();
@@ -187,8 +194,9 @@ public class DefaultHDShader implements HDShader {
                     lighting.applyLighting(ps, this, c, tmpcolor);
                     /* If we got alpha from subblock model, use it instead */
                     if(subalpha >= 0) {
-                        for(int j = 0; j < tmpcolor.length; j++)
-                           tmpcolor[j].setAlpha(Math.max(subalpha,tmpcolor[j].getAlpha()));
+                        for (Color tmpcolor1 : tmpcolor) {
+                            tmpcolor1.setAlpha(Math.max(subalpha, tmpcolor1.getAlpha()));
+                        }
                     }
                     /* Blend color with accumulated color (weighted by alpha) */
                     if(!transparency) {  /* No transparency support */
@@ -220,6 +228,7 @@ public class DefaultHDShader implements HDShader {
         /**
          * Ray ended - used to report that ray has exited map (called if renderer has not reported complete)
          */
+        @Override
         public void rayFinished(HDPerspectiveState ps) {
         }
         /**
@@ -227,12 +236,14 @@ public class DefaultHDShader implements HDShader {
          * @param c - object to store color value in
          * @param index - index of color to request (renderer specific - 0=default, 1=day for night/day renderer
          */
+        @Override
         public void getRayColor(Color c, int index) {
             c.setColor(color[index]);
         }
         /**
          * Clean up state object - called after last ray completed
          */
+        @Override
         public void cleanup() {
         }
         @Override
@@ -304,6 +315,7 @@ public class DefaultHDShader implements HDShader {
     }
     
     /* Add shader's contributions to JSON for map object */
+    @Override
     public void addClientConfiguration(JSONObject mapObject) {
         s(mapObject, "shader", name);
     }
@@ -311,10 +323,10 @@ public class DefaultHDShader implements HDShader {
     public void exportAsMaterialLibrary(DynmapCommandSender sender, OBJExport out) throws IOException {
         throw new IOException("Export unsupported");
     }
-    private static final String[] nulllist = new String[0];
+    private static final String[] NULLLIST = new String[0];
     @Override
     public String[] getCurrentBlockMaterials(DynmapBlockState blk, MapIterator mapiter, int[] txtidx,
             BlockStep[] steps) {
-        return nulllist;
+        return NULLLIST;
     }
 }

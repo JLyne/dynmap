@@ -26,16 +26,16 @@ public class RotatedBoxRenderer extends CustomRenderer {
             return false;
         /* See if index attribute defined */
         idx_attrib = custparm.get("textureIndex");
-        ArrayList<Integer> map = new ArrayList<Integer>();
+        ArrayList<Integer> map = new ArrayList<>();
         for(int id = 0; ; id++) {
             String v = custparm.get("index" + id);
             if(v == null) break;
             map.add(Integer.valueOf(v));
         }
-        rotValues = map.toArray(new Integer[map.size()]);
+        rotValues = map.toArray(new Integer[0]);
         models = new RenderPatch[rotValues.length][];
         /* Build unrotated base model */
-        ArrayList<RenderPatch> list = new ArrayList<RenderPatch>();
+        ArrayList<RenderPatch> list = new ArrayList<>();
         addBox(rpf, list, 0, 1, 0, 1, 0, 1, null);
         
         for(int id = 0; id < rotValues.length; id++) {
@@ -45,7 +45,7 @@ public class RotatedBoxRenderer extends CustomRenderer {
             if(v.startsWith("S")) {
                 models[id] = new RenderPatch[6];
                 for(int i = 0; i < 6; i++) {
-                    int idx = 0;
+                    int idx;
                     try {
                         idx = v.charAt(i+1) - '0';
                         models[id][i] = rpf.getRotatedPatch(list.get(i), 0, 0, 0, idx);
@@ -57,28 +57,30 @@ public class RotatedBoxRenderer extends CustomRenderer {
             }
             else {
                 String sv[] = v.split("/");
-                int x = 0, y = 0, z = 0;
-                if(sv.length == 1) {    /* Only 1 = Y axis */
-                    try {
-                        y = Integer.parseInt(v);
-                    } catch (NumberFormatException nfx) {
+                int x = 0, y, z = 0;
+                switch (sv.length) {
+                    case 1:
+                        /* Only 1 = Y axis */
+                        try {
+                            y = Integer.parseInt(v);
+                        } catch (NumberFormatException nfx) {
+                            Log.severe("Invalid map format:" + v);
+                            return false;
+                        }   
+                        break;
+                    case 3:
+                        try {
+                            x = Integer.parseInt(sv[0]);
+                            y = Integer.parseInt(sv[1]);
+                            z = Integer.parseInt(sv[2]);
+                        } catch (NumberFormatException nfx) {
+                            Log.severe("Invalid map format:" + v);
+                            return false;
+                        }   
+                        break;
+                    default:
                         Log.severe("Invalid map format:" + v);
                         return false;
-                    }
-                }
-                else if(sv.length == 3) { 
-                    try {
-                        x = Integer.parseInt(sv[0]);
-                        y = Integer.parseInt(sv[1]);
-                        z = Integer.parseInt(sv[2]);
-                    } catch (NumberFormatException nfx) {
-                        Log.severe("Invalid map format:" + v);
-                        return false;
-                    }
-                }
-                else {
-                    Log.severe("Invalid map format:" + v);
-                    return false;
                 }
                 models[id] = new RenderPatch[6];
                 for(int i = 0; i < 6; i++) {

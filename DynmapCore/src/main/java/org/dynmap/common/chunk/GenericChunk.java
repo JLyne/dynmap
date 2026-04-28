@@ -2,8 +2,8 @@ package org.dynmap.common.chunk;
 
 import java.util.Arrays;
 
-import org.dynmap.renderer.DynmapBlockState;
 import org.dynmap.common.BiomeMap;
+import org.dynmap.renderer.DynmapBlockState;
 
 // Generic chunk representation
 public class GenericChunk {
@@ -38,7 +38,7 @@ public class GenericChunk {
 	// Get section for given block Y coord
 	public final GenericChunkSection getSection(int y) {
 		int idx = (y >> 4) - this.cy_min;
-		if ((idx < 0) || (idx >= sectionCnt)) {
+		if ((idx < 0) || (idx >= sections.length)) {
 			return GenericChunkSection.EMPTY;
 		}
 		return this.sections[idx];
@@ -74,6 +74,7 @@ public class GenericChunk {
     public final long getInhabitedTicks() {
         return inhabitedTicks;
     }
+    @Override
 	public String toString() {
 		return String.format("chunk(%d,%d:%s,off=%d", cx, cz, Arrays.deepToString((sections)), cy_min);
 	}
@@ -91,7 +92,7 @@ public class GenericChunk {
     	public Builder(int world_ymin, int world_ymax) {
     		reset(world_ymin, world_ymax);
     	}
-    	public void reset(int world_ymin, int world_ymax) {
+    	public final void reset(int world_ymin, int world_ymax) {
     		x = 0; z = 0; 
     		y_min = world_ymin >> 4;
     		dataversion = 0;
@@ -140,11 +141,11 @@ public class GenericChunk {
 					int totalval = 0;	// Use for allzero or allfull
 					int yidx = y << 7;
 					// Light next layer down
-					for (int x = 0; x < 16; x++) {
-						for (int z = 0; z < 16; z++) {
-							int idx = (z << 4) + x;
+					for (int sx = 0; sx < 16; sx++) {
+						for (int sz = 0; sz < 16; sz++) {
+							int idx = (sz << 4) + sx;
 							int val = sky[idx];
-							DynmapBlockState bs = sect.blocks.getBlock(x, y, z);	// Get block
+							DynmapBlockState bs = sect.blocks.getBlock(sx, y, sz);	// Get block
 							int atten = bs.getLightAttenuation();
 							if ((atten > 0) && (val > 0)) {
 								val = (val >= atten) ? (val - atten) : 0;
@@ -163,12 +164,12 @@ public class GenericChunk {
 						boolean changed;
 						do {
 	    					changed = false;
-	        				for (int x = 0; x < 16; x++) {
-	        					for (int z = 0; z < 16; z++) {
-	        						int idx = (z << 4) + x;
+	        				for (int sx = 0; sx < 16; sx++) {
+	        					for (int sz = 0; sz < 16; sz++) {
+	        						int idx = (sz << 4) + sx;
 	        						int cur = sky[idx];
 	        						boolean curnonopaq = nonOpaque[idx];
-	        						if (x < 15) {	// If not right edge, check X spread
+	        						if (sx < 15) {	// If not right edge, check X spread
 	        							int right = sky[idx+1];
 	            						boolean rightnonopaq = nonOpaque[idx+1];
 	            						// If spread right
@@ -180,7 +181,7 @@ public class GenericChunk {
 	            							sky[idx] = cur = right - 1; changed = true;
             							}
 	        						}
-	        						if (z < 15) {	// If not bottom edge, check Z spread
+	        						if (sz < 15) {	// If not bottom edge, check Z spread
 	        							int down = sky[idx+16];
 	            						boolean downnonopaq = nonOpaque[idx+16];
 	            						// If spread down

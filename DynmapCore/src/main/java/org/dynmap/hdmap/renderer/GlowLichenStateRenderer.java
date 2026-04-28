@@ -33,7 +33,7 @@ public class GlowLichenStateRenderer extends CustomRenderer {
         RenderPatch East = rpf.getPatch(0.95, 0.0, 0.0, 0.95, 0.0, 1.0, 0.95, 1.0, 0.0, 0.0, 1.0, 0.0, 1.0, SideVisible.BOTH, 0);
         RenderPatch North = rpf.getPatch(0.0, 0.0, 0.05, 1.0, 0.0, 0.05, 0.0, 1.0, 0.05, 0.0, 1.0, 0.0, 1.0, SideVisible.BOTH, 0);
         RenderPatch South = rpf.getPatch(0.0, 0.0, 0.95, 1.0, 0.0, 0.95, 0.0, 1.0, 0.95, 0.0, 1.0, 0.0, 1.0, SideVisible.BOTH, 0);
-        ArrayList<RenderPatch> list = new ArrayList<RenderPatch>();
+        ArrayList<RenderPatch> list = new ArrayList<>();
         for (int i = 0; i < 64; i++) {
             list.clear();
             if ((i & 0x20) == 0) list.add(Bottom);
@@ -42,7 +42,7 @@ public class GlowLichenStateRenderer extends CustomRenderer {
             if ((i & 0x04) == 0) list.add(South);
             if ((i & 0x02) == 0) list.add(Top);
             if ((i & 0x01) == 0) list.add(West);
-            meshes[i] = list.toArray(new RenderPatch[list.size()]);
+            meshes[i] = list.toArray(new RenderPatch[0]);
         }
     }
     @Override

@@ -1,7 +1,5 @@
 package org.dynmap.hdmap;
 
-import static org.dynmap.JSONUtils.s;
-
 import java.io.IOException;
 import java.util.BitSet;
 import java.util.List;
@@ -9,6 +7,7 @@ import java.util.List;
 import org.dynmap.Color;
 import org.dynmap.ConfigurationNode;
 import org.dynmap.DynmapCore;
+import static org.dynmap.JSONUtils.s;
 import org.dynmap.MapManager;
 import org.dynmap.common.DynmapCommandSender;
 import org.dynmap.exporter.OBJExport;
@@ -20,11 +19,11 @@ import org.dynmap.utils.MapIterator;
 import org.json.simple.JSONObject;
 
 public class CaveHDShader implements HDShader {
-    private String name;
-    private boolean iflit;
-    private Color startColor;
-    private Color endColor;
-    private BitSet hiddenids = new BitSet();
+    private final String name;
+    private final boolean iflit;
+    private final Color startColor;
+    private final Color endColor;
+    private final BitSet hiddenids = new BitSet();
 
     private void setHidden(DynmapBlockState blk) {
         hiddenids.set(blk.globalStateIndex);
@@ -114,7 +113,7 @@ public class CaveHDShader implements HDShader {
     }
     
     private class OurShaderState implements HDShaderState {
-        private Color color;
+        private final Color color;
         protected MapIterator mapiter;
         protected HDMap map;
         private boolean air;
@@ -281,6 +280,7 @@ public class CaveHDShader implements HDShader {
     }
     
     /* Add shader's contributions to JSON for map object */
+    @Override
     public void addClientConfiguration(JSONObject mapObject) {
         s(mapObject, "shader", name);
     }
@@ -288,9 +288,9 @@ public class CaveHDShader implements HDShader {
     public void exportAsMaterialLibrary(DynmapCommandSender sender, OBJExport out) throws IOException {
         throw new IOException("Export unsupported");
     }
-    private static final String[] nulllist = new String[0];
+    private static final String[] NULLLIST = new String[0];
     @Override
     public String[] getCurrentBlockMaterials(DynmapBlockState blk, MapIterator mapiter, int[] txtidx, BlockStep[] steps) {
-        return nulllist;
+        return NULLLIST;
     }
 }

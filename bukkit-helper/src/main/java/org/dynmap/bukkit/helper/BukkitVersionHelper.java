@@ -115,7 +115,7 @@ public class BukkitVersionHelper {
     			int off2 = fname.indexOf(']');
     			sb = fname.substring(off1+1, off2);
     		}
-            int lightAtten = bd.getLightBlock();	// getLightBlock
+            int lightAtten = bd.getLightDampening();	// getLightDampening
             //Log.info("statename=" + bname + "[" + sb + "], lightAtten=" + lightAtten);
             // Fill in base attributes
             bld.setBaseState(lastbs).setStateIndex(idx).setBlockName(bname).setStateName(sb).setAttenuatesLight(lightAtten);

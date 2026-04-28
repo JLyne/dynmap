@@ -1,8 +1,5 @@
 package org.dynmap.hdmap;
 
-import static org.dynmap.JSONUtils.a;
-import static org.dynmap.JSONUtils.s;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -11,13 +8,14 @@ import org.dynmap.ConfigurationNode;
 import org.dynmap.DynmapChunk;
 import org.dynmap.DynmapCore;
 import org.dynmap.DynmapWorld;
+import static org.dynmap.JSONUtils.a;
+import static org.dynmap.JSONUtils.s;
 import org.dynmap.Log;
 import org.dynmap.MapManager;
 import org.dynmap.MapTile;
 import org.dynmap.MapType;
 import org.dynmap.storage.MapStorage;
 import org.dynmap.storage.MapStorageTile;
-import org.dynmap.storage.MapStorageTileEnumCB;
 import org.dynmap.utils.TileFlags;
 import org.json.simple.JSONObject;
 
@@ -155,6 +153,7 @@ public class HDMap extends MapType {
         setReadOnly(configuration.getBoolean("readonly", false));
     }
 
+    @Override
     public ConfigurationNode saveConfiguration() {
         ConfigurationNode cn = super.saveConfiguration();
         cn.put("title", title);
@@ -216,6 +215,7 @@ public class HDMap extends MapType {
     }
 
     /* Return number of zoom levels needed by this map (before extra levels from extrazoomout) */
+    @Override
     public int getMapZoomOutLevels() {
         return mapzoomout;
     }
@@ -231,8 +231,9 @@ public class HDMap extends MapType {
     }
 
     /* Get maps rendered concurrently with this map in this world */
+    @Override
     public List<MapType> getMapsSharingRender(DynmapWorld w) {
-        ArrayList<MapType> maps = new ArrayList<MapType>();
+        ArrayList<MapType> maps = new ArrayList<>();
         for(MapType mt : w.maps) {
             if(mt instanceof HDMap) {
                 HDMap hdmt = (HDMap)mt;
@@ -245,8 +246,9 @@ public class HDMap extends MapType {
     }
     
     /* Get names of maps rendered concurrently with this map type in this world */
+    @Override
     public List<String> getMapNamesSharingRender(DynmapWorld w) {
-        ArrayList<String> lst = new ArrayList<String>();
+        ArrayList<String> lst = new ArrayList<>();
         for(MapType mt : w.maps) {
             if(mt instanceof HDMap) {
                 HDMap hdmt = (HDMap)mt;
@@ -298,7 +300,7 @@ public class HDMap extends MapType {
             c = c.substring(1);
             if(c.length() == 3) {   /* #rgb */
                 try {
-                    v = Integer.valueOf(c, 16);
+                    v = Integer.parseInt(c, 16);
                 } catch (NumberFormatException nfx) {
                     return 0;
                 }
@@ -306,7 +308,7 @@ public class HDMap extends MapType {
             }
             else if(c.length() == 6) {  /* #rrggbb */
                 try {
-                    v = Integer.valueOf(c, 16);
+                    v = Integer.parseInt(c, 16);
                 } catch (NumberFormatException nfx) {
                     return 0;
                 }
@@ -317,41 +319,41 @@ public class HDMap extends MapType {
         return v;
     }
     
+    @Override
     public int getBackgroundARGBDay() {
         return bgcolorday;
     }
     
+    @Override
     public int getBackgroundARGBNight() {
         return bgcolornight;
     }
     
+    @Override
     public void purgeOldTiles(final DynmapWorld world, final TileFlags rendered) {
         final MapStorage ms = world.getMapStorage();
-        ms.enumMapTiles(world, this, new MapStorageTileEnumCB() {
-            @Override
-            public void tileFound(MapStorageTile tile, ImageEncoding fmt) {
-                if (fmt != getImageFormat().getEncoding()) { // Wrong format?  toss it
-                    /* Otherwise, delete tile */
-                    tile.delete();
-                }
-                else if (tile.zoom == 1) {   // First tier zoom?  sensitive to newly rendered tiles
-                    // If any were rendered, already triggered (and still needed
-                    if (rendered.getFlag(tile.x, tile.y) || rendered.getFlag(tile.x+1, tile.y) ||
+        ms.enumMapTiles(world, this, (MapStorageTile tile, ImageEncoding fmt) -> {
+            if (fmt != getImageFormat().getEncoding()) { // Wrong format?  toss it
+                /* Otherwise, delete tile */
+                tile.delete();
+            }
+            else if (tile.zoom == 1) {   // First tier zoom?  sensitive to newly rendered tiles
+                // If any were rendered, already triggered (and still needed
+                if (rendered.getFlag(tile.x, tile.y) || rendered.getFlag(tile.x+1, tile.y) ||
                         rendered.getFlag(tile.x, tile.y-1) || rendered.getFlag(tile.x+1, tile.y-1)) {
-                        return;
-                    }
-                    tile.enqueueZoomOutUpdate();
+                    return;
                 }
-                else if (tile.zoom == 0) {
-                    if (rendered.getFlag(tile.x, tile.y)) {  /* If we rendered this tile, its good */
-                        return;
-                    }
-                    /* Otherwise, delete tile */
-                    tile.delete();
-                    /* Push updates, clear hash code, and signal zoom tile update */
-                    MapManager.mapman.pushUpdate(world, new Client.Tile(tile.getURI()));
-                    tile.enqueueZoomOutUpdate();
+                tile.enqueueZoomOutUpdate();
+            }
+            else if (tile.zoom == 0) {
+                if (rendered.getFlag(tile.x, tile.y)) {  /* If we rendered this tile, its good */
+                    return;
                 }
+                /* Otherwise, delete tile */
+                tile.delete();
+                /* Push updates, clear hash code, and signal zoom tile update */
+                MapManager.mapman.pushUpdate(world, new Client.Tile(tile.getURI()));
+                tile.enqueueZoomOutUpdate();
             }
         });
     }

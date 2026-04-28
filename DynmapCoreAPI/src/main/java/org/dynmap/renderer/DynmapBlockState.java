@@ -306,11 +306,10 @@ public class DynmapBlockState {
      */
     public static final DynmapBlockState getStateByGlobalIndex(int gidx) {
     	if (blockArrayByIndex != null) {
-    		try {
+    		if (gidx >= 0 && gidx < blockArrayByIndex.length) {
     			return blockArrayByIndex[gidx];
-    		} catch (ArrayIndexOutOfBoundsException aioob) {
-    			return AIR;
     		}
+    		return AIR;
     	}
         DynmapBlockState bs = blocksByIndex.get(gidx);
         return (bs != null) ? bs : AIR;
@@ -322,12 +321,11 @@ public class DynmapBlockState {
      */
     public static final DynmapBlockState getStateByLegacyBlockID(int legacyid) {
     	if (blockArrayByLegacyID != null) {
-    		try {
+    		if (legacyid >= 0 && legacyid < blockArrayByLegacyID.length) {
     			return blockArrayByLegacyID[legacyid];
-    		} catch (ArrayIndexOutOfBoundsException aioob) {
-    			return null;
     		}
-    	}    	
+    		return null;
+    	}
     	return blocksByLegacyID.get(legacyid);
     }
     /**
@@ -348,7 +346,9 @@ public class DynmapBlockState {
         		
             	rslt = AIR;	// Assume miss
         	    String[] statelist = statename.toLowerCase().split(",");
-        		for (DynmapBlockState bb : blk.states) {
+        		for (int sidx = 0; sidx <= blk.stateLastIdx; sidx++) {
+        			DynmapBlockState bb = blk.states[sidx];
+        			if (bb == AIR) continue;    // Skip AIR fill slots
         		    boolean match = true;
         		    for (int i = 0; i < statelist.length; i++) {
         		        boolean valmatch = false;
@@ -367,7 +367,7 @@ public class DynmapBlockState {
         				rslt = bb;
         				break;
         			}
-        		}        	
+        		}
         		blk.lookup.put(statename, rslt);	// Cache the lookup
         	}
         }
@@ -546,10 +546,20 @@ public class DynmapBlockState {
      * Test if matches attrib=value pair
      */
     public final boolean isStateMatch(String attrib, String value) {
-    	String v = attrib + "=" + value;
-    	v = v.toLowerCase();
+    	int alen = attrib.length();
+    	int vlen = value.length();
+    	int total = alen + 1 + vlen;
+    	outer:
     	for (String state : stateList) {
-    		if (state.equals(v)) return true;
+    		if (state.length() != total) continue;
+    		for (int i = 0; i < alen; i++) {
+    			if (Character.toLowerCase(attrib.charAt(i)) != state.charAt(i)) continue outer;
+    		}
+    		if (state.charAt(alen) != '=') continue;
+    		for (int i = 0; i < vlen; i++) {
+    			if (Character.toLowerCase(value.charAt(i)) != state.charAt(alen + 1 + i)) continue outer;
+    		}
+    		return true;
     	}
     	return false;
     }

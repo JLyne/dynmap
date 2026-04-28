@@ -1,7 +1,5 @@
 package org.dynmap.hdmap;
 
-import static org.dynmap.JSONUtils.s;
-
 import java.io.IOException;
 import java.util.BitSet;
 import java.util.List;
@@ -9,14 +7,15 @@ import java.util.List;
 import org.dynmap.Color;
 import org.dynmap.ConfigurationNode;
 import org.dynmap.DynmapCore;
+import static org.dynmap.JSONUtils.s;
 import org.dynmap.MapManager;
 import org.dynmap.common.DynmapCommandSender;
 import org.dynmap.exporter.OBJExport;
 import org.dynmap.renderer.DynmapBlockState;
+import org.dynmap.utils.BlockStep;
 import org.dynmap.utils.DynLongHashMap;
 import org.dynmap.utils.MapChunkCache;
 import org.dynmap.utils.MapIterator;
-import org.dynmap.utils.BlockStep;
 import org.json.simple.JSONObject;
 
 public class TopoHDShader implements HDShader {
@@ -24,7 +23,7 @@ public class TopoHDShader implements HDShader {
     private final Color linecolor;  /* Color for topo lines */
     private final Color fillcolor[];  /* Color for nontopo surfaces */
     private final Color watercolor;
-    private BitSet hiddenids;
+    private final BitSet hiddenids;
     private final int linespacing;
     
     public TopoHDShader(DynmapCore core, ConfigurationNode configuration) {
@@ -118,13 +117,13 @@ public class TopoHDShader implements HDShader {
     }
     
     private class OurShaderState implements HDShaderState {
-        private Color color[];
-        private Color tmpcolor[];
-        private Color c;
+        private final Color color[];
+        private final Color tmpcolor[];
+        private final Color c;
         protected MapIterator mapiter;
         protected HDMap map;
-        private HDLighting lighting;
-        private int scale;
+        private final HDLighting lighting;
+        private final int scale;
         private int heightshift;    /* Divide to keep in 0-127 range of colors */
         private boolean inWater;
         final int[] lightingTable;
@@ -161,6 +160,7 @@ public class TopoHDShader implements HDShader {
         /**
          * Get our shader
          */
+        @Override
         public HDShader getShader() {
             return TopoHDShader.this;
         }
@@ -168,6 +168,7 @@ public class TopoHDShader implements HDShader {
         /**
          * Get our map
          */
+        @Override
         public HDMap getMap() {
             return map;
         }
@@ -175,6 +176,7 @@ public class TopoHDShader implements HDShader {
         /**
          * Get our lighting
          */
+        @Override
         public HDLighting getLighting() {
             return lighting;
         }
@@ -182,13 +184,15 @@ public class TopoHDShader implements HDShader {
         /**
          * Reset renderer state for new ray
          */
+        @Override
         public void reset(HDPerspectiveState ps) {
-            for(int i = 0; i < color.length; i++)
-                color[i].setTransparent();
+            for (Color color1 : color) {
+                color1.setTransparent();
+            }
             inWater = false;
         }
         
-        private final boolean isHidden(DynmapBlockState blk) {
+        private boolean isHidden(DynmapBlockState blk) {
             return hiddenids.get(blk.globalStateIndex);
         }
         
@@ -196,6 +200,7 @@ public class TopoHDShader implements HDShader {
          * Process next ray step - called for each block on route
          * @return true if ray is done, false if ray needs to continue
          */
+        @Override
         public boolean processBlock(HDPerspectiveState ps) {
             DynmapBlockState blocktype = ps.getBlockState();
             
@@ -269,21 +274,25 @@ public class TopoHDShader implements HDShader {
                 int alpha = color[0].getAlpha();
                 int alpha2 = tmpcolor[0].getAlpha() * (255-alpha) / 255;
                 int talpha = alpha + alpha2;
-                if(talpha > 0)
-                    for(int i = 0; i < color.length; i++)
+                if(talpha > 0) {
+                    for (int i = 0; i < color.length; i++) {
                         color[i].setRGBA((tmpcolor[i].getRed()*alpha2 + color[i].getRed()*alpha) / talpha,
                               (tmpcolor[i].getGreen()*alpha2 + color[i].getGreen()*alpha) / talpha,
                               (tmpcolor[i].getBlue()*alpha2 + color[i].getBlue()*alpha) / talpha, talpha);
-                else
-                    for(int i = 0; i < color.length; i++)
-                        color[i].setTransparent();
-                    
+                    }
+                }   
+                else {
+                    for (Color color1 : color) {
+                        color1.setTransparent();
+                    }
+                }
                 return (talpha >= 254);   /* If only one short, no meaningful contribution left */
             }
         }        
         /**
          * Ray ended - used to report that ray has exited map (called if renderer has not reported complete)
          */
+        @Override
         public void rayFinished(HDPerspectiveState ps) {
         }
         /**
@@ -291,12 +300,14 @@ public class TopoHDShader implements HDShader {
          * @param c - object to store color value in
          * @param index - index of color to request (renderer specific - 0=default, 1=day for night/day renderer
          */
+        @Override
         public void getRayColor(Color c, int index) {
             c.setColor(color[index]);
         }
         /**
          * Clean up state object - called after last ray completed
          */
+        @Override
         public void cleanup() {
         }
         @Override
@@ -326,6 +337,7 @@ public class TopoHDShader implements HDShader {
     }
     
     /* Add shader's contributions to JSON for map object */
+    @Override
     public void addClientConfiguration(JSONObject mapObject) {
         s(mapObject, "shader", name);
     }
@@ -333,9 +345,9 @@ public class TopoHDShader implements HDShader {
     public void exportAsMaterialLibrary(DynmapCommandSender sender, OBJExport out) throws IOException {
         throw new IOException("Export unsupported");
     }
-    private static final String[] nulllist = new String[0];
+    private static final String[] NULLLIST = new String[0];
     @Override
     public String[] getCurrentBlockMaterials(DynmapBlockState blk, MapIterator mapiter, int[] txtidx, BlockStep[] steps) {
-        return nulllist;
+        return NULLLIST;
     }
 }

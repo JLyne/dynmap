@@ -30,32 +30,32 @@ public class BoxStateRenderer extends CustomRenderer {
         /* Check limits */
         String lim = custparm.get("xmin");
         if (lim != null) {
-            xmin = Double.valueOf(lim);
+            xmin = Double.parseDouble(lim);
             if (xmin < 0.0) xmin = 0.0;
         }
         lim = custparm.get("xmax");
         if (lim != null) {
-            xmax = Double.valueOf(lim);
+            xmax = Double.parseDouble(lim);
             if (xmax > 1.0) xmax = 1.0;
         }
         lim = custparm.get("ymin");
         if (lim != null) {
-            ymin = Double.valueOf(lim);
+            ymin = Double.parseDouble(lim);
             if (ymin < 0.0) ymin = 0.0;
         }
         lim = custparm.get("ymax");
         if (lim != null) {
-            ymax = Double.valueOf(lim);
+            ymax = Double.parseDouble(lim);
             if (ymax > 1.0) ymax = 1.0;
         }
         lim = custparm.get("zmin");
         if (lim != null) {
-            zmin = Double.valueOf(lim);
+            zmin = Double.parseDouble(lim);
             if (zmin < 0.0) zmin = 0.0;
         }
         lim = custparm.get("zmax");
         if (lim != null) {
-            zmax = Double.valueOf(lim);
+            zmax = Double.parseDouble(lim);
             if (zmax > 1.0) zmax = 1.0;
         }
         DynmapBlockState bs = DynmapBlockState.getBaseStateByName(blkname);	// Look up block
@@ -64,7 +64,7 @@ public class BoxStateRenderer extends CustomRenderer {
         int[] patchlist = new int[6];
         for (int i = 0; i < models.length; i++) {
         	DynmapBlockState cbs = bs.getState(i);
-            ArrayList<RenderPatch> list = new ArrayList<RenderPatch>();
+            ArrayList<RenderPatch> list = new ArrayList<>();
             String[] states = cbs.stateList;
             // Produce patch list
             patchlist[0] = Arrays.binarySearch(states, "down=true") >= 0 ? 1 : 0;

@@ -8,12 +8,12 @@ import org.dynmap.utils.MapChunkCache;
 import org.dynmap.utils.MapIterator;
 
 public class TexturePackHDCaveShader extends TexturePackHDShader {
-    private int maxskylevel;
-    private int minemittedlevel;
+    private final int maxskylevel;
+    private final int minemittedlevel;
     
     class CaveShaderState extends TexturePackHDShader.ShaderState {
         private boolean ready;
-        private LightLevels ll = new LightLevels();
+        private final LightLevels ll = new LightLevels();
         
         protected CaveShaderState(MapIterator mapiter, HDMap map, MapChunkCache cache, int scale) {
             super(mapiter, map, cache, scale);
@@ -27,6 +27,7 @@ public class TexturePackHDCaveShader extends TexturePackHDShader {
          * Process next ray step - called for each block on route
          * @return true if ray is done, false if ray needs to continue
          */
+        @Override
         public boolean processBlock(HDPerspectiveState ps) {
             if(ready)
                 return super.processBlock(ps);
