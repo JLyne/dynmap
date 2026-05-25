@@ -95,7 +95,7 @@ public class ClientUpdateComponent extends Component {
             if((!hide) && hideifinvisiblepotion && p.isInvisible()) {
                 hide = true;
             }
-            if((!hide) && hideIfVanished && p.isVanished()) {
+            if(hideIfVanished && p.isVanished()) {
                 continue;
             }
                 
