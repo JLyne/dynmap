@@ -537,7 +537,6 @@ public class HDBlockModels {
                     }
                     else {
                         Log.severe("Invalid rotate error - line " + lineNum + " of file: " + fname);
-                        return;
                     }
                 }
                 else if (typeid.equals("ignore-updates")) {
