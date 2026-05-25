@@ -43,18 +43,18 @@ storage:
 components:
   - class: org.dynmap.ClientConfigurationComponent
 
-  #- class: org.dynmap.JsonFileClientUpdateComponent
-  #  writeinterval: 1
-  #  sendhealth: true
-  #  sendposition: true
-  #  includehiddenplayers: false
-  #  use-name-colors: false
-  #  hideifshadow: 0
-  #  hideifundercover: 0
-  #  hideifsneaking: false
-  #  hide-if-invisiblity-potion: true
-  #  hide-if-vanished: true
-  #  hidenames: false
+  - class: org.dynmap.JsonFileClientUpdateComponent
+    writeinterval: 1
+    sendhealth: true
+    sendposition: true
+    includehiddenplayers: false
+    use-name-colors: false
+    hideifshadow: 0
+    hideifundercover: 0
+    hideifsneaking: false
+    hide-if-invisiblity-potion: true
+    hide-if-vanished: true
+    hidenames: false
   
   # Note: this component is needed for the dmarker commands, and for the Marker API to be available to other plugins
   - class: org.dynmap.MarkersComponent

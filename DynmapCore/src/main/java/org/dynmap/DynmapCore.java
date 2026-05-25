@@ -582,9 +582,8 @@ public class DynmapCore implements DynmapCommonAPI {
         Log.verboseinfo("Loaded " + componentManager.components.size() + " components.");
 
         if (!componentManager.isLoaded(JsonFileClientUpdateComponent.class)) {
-            Log.warning("Using external server, but " + JsonFileClientUpdateComponent.class.toString() + " is DISABLED!");
-            Log.warning("If the website is missing files or not loading/updating, this might be why.");
-            Log.warning("For more info, read this: " + CompConfigWiki);
+            Log.warning("Using external server, but " + JsonFileClientUpdateComponent.class.toString() + " is disabled.");
+            Log.warning("The web UI will not function correctly.");
         }
         
         /* Add login/logoff listeners */
