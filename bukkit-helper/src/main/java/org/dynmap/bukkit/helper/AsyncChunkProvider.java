@@ -31,8 +31,8 @@ public class AsyncChunkProvider {
 
     public synchronized Supplier<CompoundTag> getLoadedChunk(CraftWorld world, int x, int z) {
         if (!world.isChunkLoaded(x, z)) return () -> null;
-        LevelChunk c = world.getHandle().chunkSource.getChunkAtIfLoadedImmediately(x, z);
-        if ((c == null) || !c.loaded) return () -> null;    // c.loaded
+        LevelChunk c = world.getHandle().getChunkSource().getChunkAtIfLoadedImmediately(x, z);
+        if ((c == null)) return () -> null;
         if (currTick != MinecraftServer.currentTick) {
             currTick = MinecraftServer.currentTick;
             currChunks = 0;
