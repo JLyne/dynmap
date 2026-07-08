@@ -1169,34 +1169,6 @@ public class TexturePack {
                 }
             }
         }
-        else {  /* Else, use v1.5 tile files */
-            native_scale = 16;
-            /* Loop through textures - find biggest one */
-            for(i = 0; i < terrain_map.length; i++) {
-                String fn = getBlockFileName(i);
-                if (fn == null) continue;
-                DynamicTileFile dtf = addonfilesbyname.get(fn);
-                if (dtf == null) continue;
-                LoadedImage li = imgs[dtf.idx+IMG_CNT];
-                if(li != null) {
-                    if(native_scale < li.width) native_scale = li.width;
-                }
-            }
-            blank = new int[native_scale*native_scale];
-            /* Now, load scaled images */
-            for(i = 0; i < terrain_map.length; i++) {
-                String fn = getBlockFileName(i);
-                if (fn == null) continue;
-                DynamicTileFile dtf = addonfilesbyname.get(fn);
-                if (dtf == null) continue;
-                LoadedImage li = imgs[dtf.idx + IMG_CNT];
-                if(li != null) {
-                    int[] buf = new int[native_scale * native_scale];
-                    scaleTerrainPNGSubImage(li.width, native_scale, li.argb, buf);
-                    setTileARGB(i, buf);
-                }
-            }
-        }
         /* Build extended piston side texture - take top 1/4 of piston side, use to make piston extension */
         int[] buf = new int[native_scale*native_scale];
         setTileARGB(TILEINDEX_PISTONEXTSIDE, buf);

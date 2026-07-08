@@ -4689,3 +4689,16 @@ modellist:id=%dropper,state=facing:down,box=0.000000/0.000000/0.000000:16.000000
 
 # Copper chests
 [1.21.9-]customblock:id=copper_chest,id=exposed_copper_chest,id=weathered_copper_chest,id=oxidized_copper_chest,id=waxed_copper_chest,id=waxed_exposed_copper_chest,id=waxed_weathered_copper_chest,id=waxed_oxidized_copper_chest,class=org.dynmap.hdmap.renderer.ChestStateRenderer,doublechest=true
+
+# Golden Dandelion
+[26.1-]patchblock:id=golden_dandelion,patch0=VertX1Z0ToX0Z1,patch1=VertX1Z0ToX0Z1@90
+[26.1-]patchblock:id=potted_golden_dandelion,patch0=FlowerPotTop,patch1=FlowerPotBottom,patch2=FlowerPotSide,patch3=FlowerPotSide@90,patch4=FlowerPotSide@180,patch5=FlowerPotSide@270,patch6=FlowerPotDirt,patch7=FlowerPotFlower,patch8=FlowerPotFlower@90
+
+# Cinnabar and Sulfur
+[26.2-]customblock:id=cinnabar_stairs,id=polished_cinnabar_stairs,id=cinnabar_brick_stairs,id=sulfur_stairs,id=polished_sulfur_stairs,id=sulfur_brick_stairs,class=org.dynmap.hdmap.renderer.StairStateRenderer
+[26.2-]boxblock:id=cinnabar_slab,id=polished_cinnabar_slab,id=cinnabar_brick_slab,id=sulfur_slab,id=polished_sulfur_slab,id=sulfur_brick_slab,state=type:top,ymin=0.5
+[26.2-]boxblock:id=cinnabar_slab,id=polished_cinnabar_slab,id=cinnabar_brick_slab,id=sulfur_slab,id=polished_sulfur_slab,id=sulfur_brick_slab,state=type:bottom,ymax=0.5
+[26.2-]customblock:id=cinnabar_wall,id=polished_cinnabar_wall,id=cinnabar_brick_wall,id=sulfur_wall,id=polished_sulfur_wall,id=sulfur_brick_wall,class=org.dynmap.hdmap.renderer.FenceWallBlockStateRenderer,type=tallwall
+
+# Sulfur spike
+[26.2-]patchblock:id=sulfur_spike,patch0=VertX1Z0ToX0Z1,patch1=VertX1Z0ToX0Z1@90
