@@ -103,6 +103,9 @@ public class JsonFileClientUpdateComponent extends ClientUpdateComponent {
         if (!baseStandaloneDir.isAbsolute()) {
             baseStandaloneDir = new File(core.getDataFolder(), baseStandaloneDir.toString());
         }
+        if (!baseStandaloneDir.isDirectory() && !baseStandaloneDir.mkdirs()) {
+            Log.warning("Could not create directory for standalone files ('" + baseStandaloneDir + "').");
+        }        
         try {
             md = MessageDigest.getInstance("SHA-1");
         } catch (NoSuchAlgorithmException nsax) {

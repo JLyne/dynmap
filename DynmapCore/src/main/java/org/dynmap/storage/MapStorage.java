@@ -52,6 +52,9 @@ public abstract class MapStorage {
         if (!baseStandaloneDir.isAbsolute()) {
             baseStandaloneDir = new File(core.getDataFolder(), baseStandaloneDir.toString());
         }
+        if (!baseStandaloneDir.isDirectory() && !baseStandaloneDir.mkdirs()) {
+            Log.warning("Could not create directory for standalone files ('" + baseStandaloneDir + "').");
+        } 
         return true;
     }
     
