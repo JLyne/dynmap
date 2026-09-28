@@ -11,7 +11,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 
-@SuppressWarnings("UnstableApiUsage")
 public class CommandHandler implements BasicCommand {
 	private final DynmapPlugin plugin;
 	private final String command;
